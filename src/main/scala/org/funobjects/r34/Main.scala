@@ -2,6 +2,7 @@ package org.funobjects.r34
 
 import akka.actor.ActorSystem
 import akka.http.model.{HttpResponse, HttpRequest}
+import akka.stream.ActorFlowMaterializer
 
 /**
  * Created by rgf on 1/17/15.
@@ -20,10 +21,10 @@ object Main {
     import akka.stream.FlowMaterializer
 
     implicit val system = ActorSystem()
-    implicit val materializer = FlowMaterializer()
+    implicit val materializer = ActorFlowMaterializer()
 
     val serverBinding = Http(system).bind(interface = "localhost", port = 3434)
-    serverBinding.connections.foreach { connection => // foreach materializes the source
+    serverBinding.connections.runForeach { connection => // foreach materializes the source
       println("Accepted new connection from " + connection.remoteAddress)
       connection handleWithSyncHandler localAdmin
     }
