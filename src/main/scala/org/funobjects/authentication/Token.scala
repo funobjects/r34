@@ -16,11 +16,23 @@
 
 package org.funobjects.authentication
 
-class Token {
+trait AccessToken
+case class BearerToken(token: String) {
+  require(token.length <= BearerToken.maxLen)
+  require(BearerToken.valid(token))
 }
 
 object BearerToken {
-  val maxLen = 1024
+  val maxLen = 1024 * 5
   val regex = """([a-zA-Z0-9[-]_~+/]=*)""".r
-  def valid(t: String): Boolean = regex.pattern.matcher(t).matches
+  def valid(t: String): Boolean = t.length < maxLen && regex.pattern.matcher(t).matches
+}
+
+case class JwtToken(token: String) {
+  require(token.length <= JwtToken.maxLen )
+  // TODO: decode and validate JWT Token
+}
+
+object JwtToken {
+  val maxLen = 1024 * 500
 }
