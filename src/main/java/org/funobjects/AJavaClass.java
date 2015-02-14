@@ -1,6 +1,6 @@
 package org.funobjects;
 
-import org.funobjects.authentication.BearerToken;
+import org.funobjects.r34.authentication.BearerToken;
 
 /**
  * Created by rgf on 2/12/15.

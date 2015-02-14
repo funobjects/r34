@@ -14,16 +14,8 @@
  * limitations under the License.
  */
 
-package org.funobjects
+package org.funobjects.r34.authentication
 
-/**
- * Represents an error or other exception while processing.
- */
-case class Issue(
-  msg: String,
-  parms: Array[Any],
-  ex: Option[Throwable] = None,
-  tag: Option[String] = None) {
+import org.funobjects.r34.InMemoryRepository
 
-  override def toString = String.format(msg, parms)
-}
+class SimpleUserRepository extends InMemoryRepository[String, SimpleUser]

@@ -1,7 +1,6 @@
-package org.funobjects
+package org.funobjects.r34
 
-import org.scalactic.{Good, Or, Every}
-import org.scalactic.OptionSugar._
+import org.scalactic.{Every, Good, Or}
 
 import scala.concurrent.Future
 

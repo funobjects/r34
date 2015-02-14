@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package org.funobjects.authentication
+package org.funobjects.r34.authentication
 
-import scala.language.implicitConversions
+import org.funobjects.r34.InMemoryRepository
 
-case class SimpleUser(name: String, password: String)
+case class TokenEntry[U](user: U, papers: Papers, expires: Option[Long])
 
-
+/**
+ * A simple in-memory token repository based on a concurrent Map.
+ */
+class SimpleBearerTokenRepository extends InMemoryRepository[BearerToken, TokenEntry[SimpleUser]]

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.funobjects.authentication
+package org.funobjects.r34.authentication
 
-import org.funobjects.Issue
+import org.funobjects.r34.Issue
 import org.scalactic.{Every, Or}
 
 import scala.concurrent.Future

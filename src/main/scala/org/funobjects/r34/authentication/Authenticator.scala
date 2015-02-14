@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package org.funobjects.authentication
+package org.funobjects.r34.authentication
 
-import org.funobjects.{Issue, Repository}
+import org.funobjects.r34.{Issue, Repository}
 import org.scalactic._
 
 import scala.concurrent.{Future, ExecutionContext}
@@ -41,15 +41,10 @@ object Authenticate {
 class SimpleAuthenticator(userRepo: Repository[String, SimpleUser])
   extends Authenticator[String, String, SimpleUser](userRepo) {
 
-  /**
-   * [[Identified]] for SimpleUser; user name is the id.
-   */
-  class SimpleIdentified(u: SimpleUser) extends Identified[SimpleUser](u)
-
   override def authenticate(id: String, cred: String)(implicit exec: ExecutionContext) =
     userRepo.get(id).map {
       case Good(Some(user)) => Good(Identified(user))
-      case Good(None) => Bad(One(Issue("User %s not found.", Array(id))))
+      case Good(None) => Bad(Issue("User %s not found.", id))
       case Bad(issues) => Bad(issues)
     }
 }

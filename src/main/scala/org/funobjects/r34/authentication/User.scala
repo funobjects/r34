@@ -14,25 +14,10 @@
  * limitations under the License.
  */
 
-package org.funobjects.authentication
+package org.funobjects.r34.authentication
 
-trait AccessToken
-case class BearerToken(token: String) {
-  require(token.length <= BearerToken.maxLen)
-  require(BearerToken.valid(token))
-}
+import scala.language.implicitConversions
 
-object BearerToken {
-  val maxLen = 1024 * 5
-  val regex = """([a-zA-Z0-9[-]_~+/]+=*)""".r
-  def valid(t: String): Boolean = t.length < maxLen && regex.pattern.matcher(t).matches
-}
+case class SimpleUser(name: String, password: String)
 
-case class JwtToken(token: String) {
-  require(token.length <= JwtToken.maxLen )
-  // TODO: decode and validate JWT Token w/ nimbus
-}
 
-object JwtToken {
-  val maxLen = 1024 * 500
-}

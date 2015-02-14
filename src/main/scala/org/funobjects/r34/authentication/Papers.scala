@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package org.funobjects.authentication
+package org.funobjects.r34.authentication
 
-import org.funobjects.InMemoryRepository
-
-case class TokenEntry[U](user: U, papers: Papers, expires: Option[Long])
+import org.scalactic.Chain
 
 /**
- * A simple in-memory token repository based on a concurrent Map.
+ * Represents a set of permissions granted to a particular entity.
  */
-class SimpleBearerTokenRepository extends InMemoryRepository[BearerToken, TokenEntry[SimpleUser]]
+case class Papers(grants: Chain[Grant])
+
+case class Grant(scope: String)

@@ -14,8 +14,28 @@
  * limitations under the License.
  */
 
-package org.funobjects.authentication
+package org.funobjects.r34
 
-import org.funobjects.InMemoryRepository
+import org.scalactic.One
 
-class SimpleUserRepository extends InMemoryRepository[String, SimpleUser]
+import scala.language.implicitConversions
+
+/**
+ * Represents an error or other exception while processing.
+ */
+case class Issue(
+  msg: String,
+  parms: Array[Any],
+  ex: Option[Throwable] = None,
+  tag: Option[String] = None) {
+
+  override def toString = String.format(msg, parms)
+}
+
+object Issue {
+  def apply(msg: String): Issue = Issue(msg, Array(), None, None)
+  def apply(msg: String, o: Any): Issue = Issue(msg, Array(o), None, None)
+  implicit def issueToOneIssue(issue: Issue): One[Issue] = One(issue)
+}
+
+
