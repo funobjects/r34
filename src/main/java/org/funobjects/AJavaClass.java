@@ -7,9 +7,9 @@ import org.funobjects.authentication.BearerToken;
  */
 public class AJavaClass {
 
-    public void doSomething() {
-
+    public static void main(String[] args) {
         String s = "aid92";
         BearerToken bt = new BearerToken(s);
+        System.out.println("Token: " + bt);
     }
 }

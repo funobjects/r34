@@ -16,38 +16,40 @@
 
 package org.funobjects.authentication
 
-import org.funobjects.authentication.Identified.FutureIdentified
+import org.funobjects.{Issue, Repository}
+import org.scalactic._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 
 /**
  * An Authenticator is a class that can take an identifier of type ID, credentials of type CRED,
  * and a UserRepository that can look up users of type U identified by type ID.
  */
-abstract class Authenticator[ID, CRED, U](userRepo: UserRepository[ID, U]) {
-   def authenticate(id: ID, cred: CRED)(implicit exec: ExecutionContext): FutureIdentified[ID, U]
+abstract class Authenticator[ID, CRED, U](userRepo: Repository[ID, U]) {
+   def authenticate(id: ID, cred: CRED)(implicit exec: ExecutionContext): Future[Identified[U] Or Every[Issue]]
 }
 
 object Authenticate {
   /**
    * Summon and apply an implicit authenticator, producing an Identified[U] from a U.
    */
-  def apply[CRED, ID, U](id: ID, userCred: CRED)
-    (implicit auth: Authenticator[ID, CRED, U], exec: ExecutionContext): FutureIdentified[ID, U] = auth.authenticate(id, userCred)
+  def apply[CRED, ID, U](id: ID, userCred: CRED)(implicit auth: Authenticator[ID, CRED, U],
+                                                 exec: ExecutionContext): Future[Identified[U] Or Every[Issue]] =
+    auth.authenticate(id, userCred)
 }
 
-class SimpleAuthenticator(userRepo: UserRepository[String, SimpleUser])
+class SimpleAuthenticator(userRepo: Repository[String, SimpleUser])
   extends Authenticator[String, String, SimpleUser](userRepo) {
 
   /**
    * [[Identified]] for SimpleUser; user name is the id.
    */
-  class SimpleIdentified(u: SimpleUser) extends Identified[String, SimpleUser](u) {
-    override def id: String = u.name
-  }
+  class SimpleIdentified(u: SimpleUser) extends Identified[SimpleUser](u)
 
-  override def authenticate(id: String, cred: String)(implicit exec: ExecutionContext): FutureIdentified[String, SimpleUser] =
-    userRepo.findUser(id).map { or => or.map(new SimpleIdentified(_)) }
-
-  class AuthenticatorException(msg: String, cause: Exception = null) extends Exception(msg, cause)
+  override def authenticate(id: String, cred: String)(implicit exec: ExecutionContext) =
+    userRepo.get(id).map {
+      case Good(Some(user)) => Good(Identified(user))
+      case Good(None) => Bad(One(Issue("User %s not found.", Array(id))))
+      case Bad(issues) => Bad(issues)
+    }
 }

@@ -23,15 +23,13 @@ import scala.concurrent.Future
 import scala.language.implicitConversions
 
 /**
- * Indicates that the wrapped user type U, identified by type ID, has been
+ * Indicates that the wrapped user type U has been
  * identified and authenticated.  This trait is designed to allow the
  * authentication state of an arbitrary user type to be embedded in the
  * type, allowing code to be written that will only compile when handling
  * an authenticated user. See [[Authenticator]]
  */
-abstract class Identified[ID, U](val user: U) {
-
-  def id: ID
+case class Identified[U](user: U) {
 
   /**
    * Execute some code with access to the contained user type.
@@ -43,16 +41,5 @@ abstract class Identified[ID, U](val user: U) {
    * used anywhere that U can be used.
    */
 
-  implicit def identifiedToUser(identified: Identified[ID, U]): U = identified.user
-}
-
-object Identified {
-  def apply[ID, U](ident: ID, u: U) = new Identified[ID, U](u) {
-    override def id: ID = ident
-  }
-
-  /**
-   * Type representing a future authenticated user [[Or]] a future Every[Issue]
-   */
-  type FutureIdentified[ID, U] = Future[Identified[ID, U] Or Every[Issue]]
+  implicit def identifiedToUser(identified: Identified[U]): U = identified.user
 }

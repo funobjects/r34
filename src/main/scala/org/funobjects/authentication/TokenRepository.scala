@@ -16,23 +16,11 @@
 
 package org.funobjects.authentication
 
-trait AccessToken
-case class BearerToken(token: String) {
-  require(token.length <= BearerToken.maxLen)
-  require(BearerToken.valid(token))
-}
+import org.funobjects.InMemoryRepository
 
-object BearerToken {
-  val maxLen = 1024 * 5
-  val regex = """([a-zA-Z0-9[-]_~+/]+=*)""".r
-  def valid(t: String): Boolean = t.length < maxLen && regex.pattern.matcher(t).matches
-}
+case class TokenEntry[U](user: U, papers: Papers, expires: Option[Long])
 
-case class JwtToken(token: String) {
-  require(token.length <= JwtToken.maxLen )
-  // TODO: decode and validate JWT Token w/ nimbus
-}
-
-object JwtToken {
-  val maxLen = 1024 * 500
-}
+/**
+ * A simple in-memory token repository based on a concurrent Map.
+ */
+class SimpleBearerTokenRepository extends InMemoryRepository[BearerToken, TokenEntry[SimpleUser]]

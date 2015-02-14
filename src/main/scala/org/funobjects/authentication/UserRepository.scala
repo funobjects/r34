@@ -16,25 +16,6 @@
 
 package org.funobjects.authentication
 
-import org.funobjects.Issue
-import org.scalactic.{One, Every, Or}
-import org.scalactic.OptionSugar._
+import org.funobjects.InMemoryRepository
 
-import scala.concurrent.Future
-
-/**
- * Indicates a service that can provide for the lookup of users of type U
- * based on an identifier of type ID
- */
-trait UserRepository[ID, U] {
-  def findUser(id: ID): Future[U Or Every[Issue]]
-}
-
-/**
- * Simple, immutable, in-memory user repository.
- */
-case class SimpleUserRepository[U](map: Map[String, U]) extends UserRepository[String, U] {
-  override def findUser(id: String): Future[U Or Every[Issue]] = Future.successful(
-    map.get(id).toOr(One(Issue("User %s not found", Array(id))))
-  )
-}
+class SimpleUserRepository extends InMemoryRepository[String, SimpleUser]
