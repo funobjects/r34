@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.funobjects.r34.authentication
+package org.funobjects.r34.auth
 
 import org.funobjects.r34.Issue
 import org.scalactic.{Every, Or}

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.funobjects.r34.authentication
+package org.funobjects.r34.auth
 
 import org.funobjects.r34.{Issue, Repository}
 import org.scalactic._
@@ -33,18 +33,25 @@ object Authenticate {
   /**
    * Summon and apply an implicit authenticator, producing an Identified[U] from a U.
    */
-  def apply[CRED, ID, U](id: ID, userCred: CRED)(implicit auth: Authenticator[ID, CRED, U],
+  def apply[CRED, ID, U](id: ID, userCred: CRED)
+    (implicit auth: Authenticator[ID, CRED, U],
                                                  exec: ExecutionContext): Future[Identified[U] Or Every[Issue]] =
     auth.authenticate(id, userCred)
 }
 
-class SimpleAuthenticator(userRepo: Repository[String, SimpleUser])
+class SimpleAuthenticator(implicit userRepo: Repository[String, SimpleUser])
   extends Authenticator[String, String, SimpleUser](userRepo) {
 
   override def authenticate(id: String, cred: String)(implicit exec: ExecutionContext) =
     userRepo.get(id).map {
-      case Good(Some(user)) => Good(Identified(user))
+      case Good(Some(user)) => checkCred(user, cred)
       case Good(None) => Bad(Issue("User %s not found.", id))
       case Bad(issues) => Bad(issues)
     }
+
+  def checkCred(user: SimpleUser, cred: String): Identified[SimpleUser] Or Every[Issue] =
+    if (user.password == cred)
+      Good(Identified(user))
+    else
+      Bad(Issue("User %s name or password is incorrect.", user.name))
 }

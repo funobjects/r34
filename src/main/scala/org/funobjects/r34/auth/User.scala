@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.funobjects.r34.authentication
+package org.funobjects.r34.auth
 
 import scala.language.implicitConversions
 
