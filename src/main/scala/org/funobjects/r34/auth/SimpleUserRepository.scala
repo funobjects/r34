@@ -18,4 +18,6 @@ package org.funobjects.r34.auth
 
 import org.funobjects.r34.InMemoryRepository
 
-class SimpleUserRepository extends InMemoryRepository[String, SimpleUser]
+class SimpleUserRepository(init: Option[Set[SimpleUser]] = None) extends InMemoryRepository[String, SimpleUser] {
+  for (users <- init; user <- users) map.put(user.name, user)
+}
