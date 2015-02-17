@@ -42,10 +42,7 @@ object Main {
 
     val serverBinding = Http(system).bind(interface = "localhost", port = 3434)
 
-    serverBinding.connections.runForeach { connection =>
-      println("Accepted new connection from " + connection.remoteAddress)
-      connection handleWithSyncHandler localAdmin
-    }
+    serverBinding startHandlingWithSyncHandler localAdmin
 
     def localAdmin: HttpRequest => HttpResponse = {
       case req @ HttpRequest(POST, Uri.Path("/shutdown"), _, _, _) =>
@@ -53,11 +50,6 @@ object Main {
         HttpResponse(StatusCodes.OK)
 
       case req @ HttpRequest(POST, Uri.Path("/auth/token"), headers, entity, _) =>
-
-//        implicit val unmarshaller = tokenRequestUnmarshaller
-//        val futureTokenRequest = Unmarshal(entity: HttpEntity).to[TokenRequest]
-//        val tr = Await.result(futureTokenRequest, 1.second)
-        //println(s"** req: ${tr}")
 
         HttpResponse(StatusCodes.NotImplemented)
 
