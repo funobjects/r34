@@ -16,6 +16,9 @@
 
 package org.funobjects.r34.auth
 
+import java.security.SecureRandom
+import java.util.Base64
+
 trait AccessToken
 case class BearerToken(token: String) {
   require(token.length <= BearerToken.maxLen)
@@ -26,6 +29,11 @@ object BearerToken {
   val maxLen = 1024 * 5
   val regex = """([a-zA-Z0-9[-]_~+/]+=*)""".r
   def valid(t: String): Boolean = t.length < maxLen && regex.pattern.matcher(t).matches
+  def generate(size: Int) = {
+    val bytes = new Array[Byte](size)
+    new SecureRandom() nextBytes bytes
+    Base64.getUrlEncoder encode bytes
+  }
 }
 
 case class JwtToken(token: String) {
