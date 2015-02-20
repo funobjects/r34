@@ -1,5 +1,8 @@
 package org.funobjects.r34.web
 
+import java.nio.ByteBuffer
+import java.util.{Base64, UUID}
+
 import akka.actor.ActorSystem
 import akka.http.model._
 import akka.http.server.Directives._
@@ -58,13 +61,14 @@ object TokenRequest {
 
   def routes(implicit sys: ActorSystem, flower: FlowMaterializer, executionContext: ExecutionContext) = {
     path ("token") {
-      formFields("len") { (a) =>
+      formFields("grant_type", "scope", "code".?, "username".?, "password".?, "client_id".?, "client_secret".?, "redirect_url".?) {
+        (grantType, scope, code, username, password, clientId, clientSecret, redirectUrl) =>
         complete {
-          val n = Try(a.toInt).getOrElse(throw new IllegalArgumentException("Not an int."))
-          //println(s"**Auth TR: $grantType $scope")
-          HttpResponse(StatusCodes.OK, entity = BearerToken.generate(n))
+          val tr = TokenRequest(grantType, scope, code, username, password, clientId, clientSecret)
+          HttpResponse(StatusCodes.OK, entity = s"$tr")
         }
       }
     }
   }
+
 }

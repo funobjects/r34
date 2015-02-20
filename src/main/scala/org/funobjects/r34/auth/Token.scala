@@ -16,11 +16,12 @@
 
 package org.funobjects.r34.auth
 
+import java.nio.ByteBuffer
 import java.security.SecureRandom
-import java.util.Base64
+import java.util.{UUID, Base64}
 
 trait AccessToken
-case class BearerToken(token: String) {
+case class BearerToken(token: String) extends AccessToken {
   require(token.length <= BearerToken.maxLen)
   require(BearerToken.valid(token))
 }
@@ -28,11 +29,20 @@ case class BearerToken(token: String) {
 object BearerToken {
   val maxLen = 1024 * 5
   val regex = """([a-zA-Z0-9[-]_~+/]+=*)""".r
+
   def valid(t: String): Boolean = t.length < maxLen && regex.pattern.matcher(t).matches
+
   def generate(size: Int) = {
     val bytes = new Array[Byte](size)
     new SecureRandom() nextBytes bytes
     Base64.getUrlEncoder encode bytes
+  }
+
+  def fromUuid(u: UUID): String = {
+    val buf = ByteBuffer.allocate(java.lang.Long.BYTES * 2)
+    buf.putLong(u.getMostSignificantBits)
+    buf.putLong(u.getLeastSignificantBits)
+    Base64.getUrlEncoder.encodeToString(buf.array())
   }
 }
 
@@ -41,6 +51,6 @@ case class JwtToken(token: String) {
   // TODO: decode and validate JWT Token w/ nimbus
 }
 
-object JwtToken {
+object JwtToken extends AccessToken {
   val maxLen = 1024 * 500
 }

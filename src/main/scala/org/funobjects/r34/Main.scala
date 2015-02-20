@@ -7,8 +7,6 @@ import akka.http.model._
 import akka.stream.ActorFlowMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
 import org.funobjects.r34.auth.{SimpleBearerTokenRepository, SimpleUser, SimpleUserRepository}
-import org.funobjects.r34.web
-import org.funobjects.r34.web.TokenRequest
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -36,7 +34,6 @@ object Main {
     )))
 
     val tokenRepo = new SimpleBearerTokenRepository
-    //val tokenController = new TokenController(userRepo, tokenRepo)
 
     val serverBinding = Http(system).bind(interface = "localhost", port = 3434)
 
