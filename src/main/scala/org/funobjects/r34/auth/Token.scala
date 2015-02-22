@@ -32,17 +32,17 @@ object BearerToken {
 
   def valid(t: String): Boolean = t.length < maxLen && regex.pattern.matcher(t).matches
 
-  def generate(size: Int) = {
+  def generate(size: Int): BearerToken = {
     val bytes = new Array[Byte](size)
     new SecureRandom() nextBytes bytes
-    Base64.getUrlEncoder encode bytes
+    BearerToken(Base64.getUrlEncoder encodeToString bytes)
   }
 
-  def fromUuid(u: UUID): String = {
-    val buf = ByteBuffer.allocate(java.lang.Long.BYTES * 2)
-    buf.putLong(u.getMostSignificantBits)
-    buf.putLong(u.getLeastSignificantBits)
-    Base64.getUrlEncoder.encodeToString(buf.array())
+  def fromUuid(u: UUID): BearerToken = {
+    val buf = ByteBuffer allocate (java.lang.Long.BYTES * 2)
+    buf putLong u.getMostSignificantBits
+    buf putLong u.getLeastSignificantBits
+    BearerToken(Base64.getUrlEncoder encodeToString buf.array())
   }
 }
 

@@ -16,11 +16,9 @@
 
 package org.funobjects.r34.auth
 
-import org.scalactic.Chain
-
 /**
  * Represents a set of permissions granted to a particular entity.
  */
-case class Papers(grants: Chain[Grant])
+case class Permits(grants: Set[Permit])
 
-case class Grant(scope: String)
+case class Permit(scope: String)

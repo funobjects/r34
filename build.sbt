@@ -14,6 +14,7 @@ libraryDependencies ++= {
     val scalatest   = "2.2.4"
     val scalactic   = "2.2.4"
     val codec       = "1.10"
+    val json4s      = "3.2.11"
   }
   Seq(
     "com.typesafe.akka"     %% "akka-http-core-experimental"        % v.akka        withSources(),
@@ -23,6 +24,7 @@ libraryDependencies ++= {
     "com.orientechnologies" %  "orientdb-core"                      % v.orientDb    withSources(),
     "com.nimbusds"          %  "nimbus-jose-jwt"                    % v.nimbus      withSources(),
     "commons-codec"         %  "commons-codec"                      % v.codec       withSources(),
+    "org.json4s"            %% "json4s-jackson"                     % v.json4s      withSources(),
     "org.scalactic"         %% "scalactic"                          % v.scalactic   withSources(),
     "org.scalatest"         %% "scalatest"                          % v.scalatest   % "test" withSources()
   )

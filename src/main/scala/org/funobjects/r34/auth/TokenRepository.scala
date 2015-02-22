@@ -18,7 +18,7 @@ package org.funobjects.r34.auth
 
 import org.funobjects.r34.InMemoryRepository
 
-case class TokenEntry[U](user: U, papers: Papers, expires: Option[Long])
+case class TokenEntry[U](user: U, papers: Permits, expires: Option[Long])
 
 /**
  * A simple in-memory token repository based on a concurrent Map.
