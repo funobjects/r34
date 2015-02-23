@@ -12,8 +12,9 @@ import org.json4s.jackson.JsonMethods._
 
 import org.funobjects.r34.auth._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 import scala.concurrent.duration._
+import scala.util.Try
 import scala.util.control.NonFatal
 
 case class Outer(a: String, b: Option[String], inner: Inner, maybe: Option[Inner] )
@@ -40,11 +41,12 @@ trait Server {
       (post & path("outer") & extract(_.request.entity)) { entity =>
         complete {
           entity.toStrict(1.second) map { strict =>
-            try {
-              parse(strict.data.utf8String)
+            Try {
+              val outer = parse(strict.data.utf8String).extract[Outer]
+              println(outer)
               HttpResponse(StatusCodes.OK)
-            } catch {
-              case NonFatal(ex) => HttpResponse(StatusCodes.InternalServerError, entity = "Non-optimal execution: ")
+            } recover {
+              case NonFatal(ex) => HttpResponse(StatusCodes.InternalServerError, entity = s"Non-optimal execution: $ex\n")
             }
           }
         }
@@ -57,6 +59,7 @@ trait Server {
           }
         }
       } ~
+      pathPrefix("stream") { web.Streamer.routes } ~
       web.TokenRequest.routes
     }
   }
@@ -80,5 +83,6 @@ object Main extends App with Server {
   override val tokenRepository = new SimpleBearerTokenRepository
 
   val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).startHandlingWith(router)
+  //val streamBinding = Http(sys).bind(interface = "localhost", port = 6868).startHandlingWith(Streamer.flow)
 }
 

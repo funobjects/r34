@@ -22,7 +22,7 @@ case class TokenRequest(
 object TokenRequest {
 
   def routes(implicit sys: ActorSystem, flows: FlowMaterializer, executionContext: ExecutionContext) = {
-    path ("token") {
+    path ("auth" / "token") {
       formFields("grant_type", "scope", "code".?, "username".?, "password".?, "client_id".?, "client_secret".?, "redirect_url".?) {
         (grantType, scope, code, username, password, clientId, clientSecret, redirectUrl) =>
         complete {
