@@ -2,6 +2,7 @@ package org.funobjects.r34
 
 import akka.actor.ActorSystem
 import akka.http.Http
+import akka.http.common.StrictForm
 import akka.http.server.Directives._
 import akka.http.model._
 import akka.stream.{FlowMaterializer, ActorFlowMaterializer}
@@ -24,7 +25,7 @@ trait Server {
   implicit val userRepository: Repository[String, SimpleUser]
   implicit val tokenRepository: Repository[BearerToken, TokenEntry[SimpleUser]]
   implicit val sys: ActorSystem
-  implicit val flows: FlowMaterializer
+  implicit val flows: ActorFlowMaterializer
   implicit val exec: ExecutionContext
 
   // default json4s extractors
@@ -82,7 +83,6 @@ object Main extends App with Server {
 
   override val tokenRepository = new BearerTokenRepository
 
-  val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).startHandlingWith(router)
-  //val streamBinding = Http(sys).bind(interface = "localhost", port = 6868).startHandlingWith(Streamer.flow)
+  val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).runForeach { _.handleWith(router) }
 }
 

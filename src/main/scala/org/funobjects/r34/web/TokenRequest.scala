@@ -3,7 +3,7 @@ package org.funobjects.r34.web
 import akka.actor.ActorSystem
 import akka.http.model._
 import akka.http.server.Directives._
-import akka.stream.FlowMaterializer
+import akka.stream.ActorFlowMaterializer
 
 import scala.concurrent.ExecutionContext
 
@@ -21,7 +21,7 @@ case class TokenRequest(
 
 object TokenRequest {
 
-  def routes(implicit sys: ActorSystem, flows: FlowMaterializer, executionContext: ExecutionContext) = {
+  def routes(implicit sys: ActorSystem, flows: ActorFlowMaterializer, executionContext: ExecutionContext) = {
     path ("auth" / "token") {
       formFields("grant_type", "scope", "code".?, "username".?, "password".?, "client_id".?, "client_secret".?, "redirect_url".?) {
         (grantType, scope, code, username, password, clientId, clientSecret, redirectUrl) =>

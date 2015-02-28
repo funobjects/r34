@@ -9,7 +9,7 @@ resolvers += Resolver.sonatypeRepo("public")
 libraryDependencies ++= {
   object v {
     val akka        = "2.3.9"
-    val akkaHttp    = "1.0-M3"
+    val akkaHttp    = "1.0-M4"
     val orientDb    = "2.0"
     val nimbus      = "3.8.2"
     val scalatest   = "2.2.4"
