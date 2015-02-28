@@ -80,7 +80,7 @@ object Main extends App with Server {
     SimpleUser("userB", "passB")
   )))
 
-  override val tokenRepository = new SimpleBearerTokenRepository
+  override val tokenRepository = new BearerTokenRepository
 
   val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).startHandlingWith(router)
   //val streamBinding = Http(sys).bind(interface = "localhost", port = 6868).startHandlingWith(Streamer.flow)

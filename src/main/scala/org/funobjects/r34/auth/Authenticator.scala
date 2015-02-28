@@ -25,7 +25,7 @@ import scala.concurrent.{Future, ExecutionContext}
  * An Authenticator is a class that can take an identifier of type ID, credentials of type CRED,
  * and a UserRepository that can look up users of type U identified by type ID.
  */
-abstract class Authenticator[ID, CRED, U](userRepo: Repository[ID, U]) {
+abstract class Authenticator[ID, CRED, U] {
    def authenticate(id: ID, cred: CRED)(implicit exec: ExecutionContext): Future[Identified[U] Or Every[Issue]]
 }
 
@@ -34,13 +34,12 @@ object Authenticate {
    * Summon and apply an implicit authenticator, producing an Identified[U] from a U.
    */
   def apply[CRED, ID, U](id: ID, userCred: CRED)
-    (implicit auth: Authenticator[ID, CRED, U],
-                                                 exec: ExecutionContext): Future[Identified[U] Or Every[Issue]] =
+    (implicit auth: Authenticator[ID, CRED, U], exec: ExecutionContext): Future[Identified[U] Or Every[Issue]] =
     auth.authenticate(id, userCred)
 }
 
 class SimpleAuthenticator(implicit userRepo: Repository[String, SimpleUser])
-  extends Authenticator[String, String, SimpleUser](userRepo) {
+  extends Authenticator[String, String, SimpleUser] {
 
   override def authenticate(id: String, cred: String)(implicit exec: ExecutionContext) =
     userRepo.get(id).map {

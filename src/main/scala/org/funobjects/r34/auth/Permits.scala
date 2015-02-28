@@ -19,6 +19,10 @@ package org.funobjects.r34.auth
 /**
  * Represents a set of permissions granted to a particular entity.
  */
-case class Permits(grants: Set[Permit])
+case class Permits(permits: Set[Permit])
+
+object Permits {
+  def apply(permit: Permit): Permits = Permits(Set(permit))
+}
 
 case class Permit(scope: String)
