@@ -57,13 +57,6 @@ class FlowStuffSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
     }
   }
 
-  "BearerTokenRepository" should "" {
-    "" in {
-
-    }
-
-  }
-
   override protected def afterAll(): Unit = {
     sys.shutdown()
     sys.awaitTermination()

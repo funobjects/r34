@@ -1,24 +1,22 @@
 package org.funobjects.r34
 
-import akka.actor.Actor.Receive
-import akka.actor.{Props, Actor, ActorSystem}
+import akka.actor.ActorSystem
 import akka.http.Http
 import akka.http.common.StrictForm
 import akka.http.model.headers._
 import akka.http.server.Directives._
 import akka.http.model._
-import akka.stream.actor.ActorPublisher
-import akka.stream.impl.TickSource
 import akka.stream.scaladsl.{Flow, Source}
-import akka.stream.{FlowMaterializer, ActorFlowMaterializer}
+import akka.stream.ActorFlowMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
-import org.funobjects.r34.auth.BearerTokenRepository.FutureEntry
+
+import org.funobjects.r34.directives.R34Directives.oauth2
 
 import org.json4s._
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import org.json4s.jackson.Serialization
-import org.json4s.jackson.Serialization.{read, write}
+import org.json4s.jackson.Serialization.{read, write, writePretty}
 
 import org.funobjects.r34.auth._
 import org.scalactic.{Bad, Good}
@@ -41,12 +39,25 @@ trait Server {
   // default json4s extractors
   implicit val formats = org.json4s.DefaultFormats
 
-  val router = {
+  def router = {
     logRequestResult("r34") {
       path("shutdown") {
         complete {
           sys.scheduler.scheduleOnce(1.second) { sys.shutdown() }
           HttpResponse(StatusCodes.OK)
+        }
+      } ~
+      (get & path("getuser")) {
+        complete {
+          HttpResponse(StatusCodes.OK, entity = writePretty(SimpleUser("a", "b")))
+        }
+      } ~
+      (get & path("tauth")) {
+        oauth2(tokenRepository) { user =>
+          println(s"*** user: $user")
+          complete {
+            HttpResponse(StatusCodes.OK)
+          }
         }
       } ~
       (post & path("outer") & extract(_.request.entity)) { entity =>
@@ -62,36 +73,20 @@ trait Server {
           }
         }
       } ~
-        (get & path("user" / Segment)) { userId =>
-          // TODO: how to enforce size limits on URL and segment ??
-          headerValueByType[Authorization]() { auth =>
-            auth.credentials match {
-              case OAuth2BearerToken(token) => println(s"OAuth2 Token: $token")
-                implicit val formats = Serialization.formats(NoTypeHints)
-                complete {
-                  tokenRepository.get(BearerToken(token)) flatMap {
-
-                    case Good(Some(tokenEntry)) =>
-
-                      userRepository.get(userId) map {
-                        case Good(Some(user)) => HttpResponse(StatusCodes.OK, entity = HttpEntity(write(user)))
-                        case Good(None)       => HttpResponse(StatusCodes.NotFound)
-                        case Bad(issues)      => HttpResponse(StatusCodes.BadRequest)
-                      } recover {
-                        case NonFatal(ex)     => HttpResponse(StatusCodes.InternalServerError)
-                      }
-
-                    case Good(None)   => Future.successful(HttpResponse(StatusCodes.Unauthorized))
-                    case Bad(issues)  => Future.successful(HttpResponse(StatusCodes.BadRequest))
-                  } recover {
-                    case NonFatal(ex) => HttpResponse(StatusCodes.Unauthorized)
-                  }
-                }
-              case _ => println("Bad Authentication Type")
-                complete { HttpResponse(StatusCodes.Unauthorized) }
+      (get & path("user" / Segment)) { userId =>
+        // TODO: how to enforce size limits on URL and segment ??
+        oauth2(tokenRepository) { identifiedUser =>
+          complete {
+            userRepository.get(userId) map {
+              case Good(Some(user)) => HttpResponse(StatusCodes.OK, entity = HttpEntity(write(user)))
+              case Good(None)       => HttpResponse(StatusCodes.NotFound)
+              case Bad(issues)      => HttpResponse(StatusCodes.BadRequest)
+            } recover {
+              case NonFatal(ex)     => HttpResponse(StatusCodes.InternalServerError)
             }
           }
-        } ~
+        }
+      } ~
       path("form") {
         formFields('a, "b", "c".?) { (a, b, c) =>
           complete {
@@ -131,10 +126,10 @@ object Main extends App with Server {
     SimpleUser("userB", "passB")
   )))
 
-  override val tokenRepository = new InMemoryRepository[BearerToken, TokenEntry[SimpleUser]]() {}
+  override val tokenRepository = new InMemoryRepository[BearerToken, TokenEntry[SimpleUser]]() {
+  }
 
   val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).runForeach { connection =>
-    println(s"connection: $connection")
     connection.handleWith(router)
   }
 }

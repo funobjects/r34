@@ -23,6 +23,7 @@ case class Permits(permits: Set[Permit])
 
 object Permits {
   def apply(permit: Permit): Permits = Permits(Set(permit))
+  def empty: Permits = Permits(Set.empty[Permit])
 }
 
 case class Permit(scope: String)
