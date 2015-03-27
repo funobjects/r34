@@ -1,7 +1,5 @@
 package org.funobjects.db.orientdb
 
-import akka.actor.Actor.Receive
-import com.orientechnologies.orient.core.config.OGlobalConfiguration
 import com.orientechnologies.orient.core.db.ODatabaseRecordThreadLocal
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 

@@ -2,7 +2,7 @@ name := "r34"
 
 organization := "org.funobjects"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.6"
 
 resolvers += Resolver.sonatypeRepo("public")
 
@@ -28,7 +28,6 @@ libraryDependencies ++= {
     "com.orientechnologies" %  "orientdb-core"                      % v.orientDb    withSources(),
     "org.reactivemongo"     %% "reactivemongo"                      % v.rxMongo     withSources(),
     "com.nimbusds"          %  "nimbus-jose-jwt"                    % v.nimbus      withSources(),
-    "commons-codec"         %  "commons-codec"                      % v.codec       withSources(),
     "org.json4s"            %% "json4s-jackson"                     % v.json4s      withSources(),
     "org.scalactic"         %% "scalactic"                          % v.scalactic   withSources(),
     "com.typesafe.akka"     %% "akka-testkit"                       % v.akka        % "test" withSources(),
