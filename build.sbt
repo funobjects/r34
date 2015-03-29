@@ -11,7 +11,7 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 libraryDependencies ++= {
   object v {
     val akka        = "2.3.9"
-    val akkaHttp    = "1.0-M4"
+    val akkaHttp    = "1.0-M5"
     val orientDb    = "2.0"
     val nimbus      = "3.8.2"
     val scalatest   = "2.2.4"
