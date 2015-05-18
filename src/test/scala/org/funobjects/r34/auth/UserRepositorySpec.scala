@@ -1,18 +1,21 @@
 package org.funobjects.r34.auth
 
+import akka.dispatch.ExecutionContexts
 import org.scalactic.Good
 import org.scalatest._
 import concurrent.ScalaFutures._
 
+import scala.concurrent.ExecutionContext
+
 /**
  * Created by rgf on 2/14/15.
  */
-class SimpleUserRepositorySpec extends FlatSpec with Matchers {
+class UserRepositorySpec extends FlatSpec with Matchers {
 
-  import SimpleUserRepositorySpec._
+  import UserRepositorySpec._
 
   "SimpleUserRepository" should "return valid users"  in {
-    implicit val userRepo = setupRepo
+    implicit val userRepo = setupRepo()
 
     {
       val f = userRepo.get("userA")
@@ -25,19 +28,23 @@ class SimpleUserRepositorySpec extends FlatSpec with Matchers {
   }
 
   "SimpleUserRepository" should "not return invalid users"  in {
-    implicit val userRepo = setupRepo
+    implicit val userRepo = setupRepo()
 
     val f = userRepo.get("userC")
     f.futureValue shouldEqual Good(None)
   }
 }
 
-object SimpleUserRepositorySpec {
+object UserRepositorySpec {
   val userA = SimpleUser("userA", "passA")
   val userB = SimpleUser("userB", "passB")
+  val userC = SimpleUser("userC", "passC")
+  val userD = SimpleUser("userD", "passD")
 
-  def setupRepo = {
+  def setupRepo() = {
     import Matchers._
+
+    implicit val exec: ExecutionContext = ExecutionContexts.global()
 
     val repo = new SimpleUserRepository()
     val fa = repo.put(userA.name, userA)
@@ -45,5 +52,20 @@ object SimpleUserRepositorySpec {
     whenReady (fa) { or => or.isGood shouldBe true }
     whenReady (fb) { or => or.isGood shouldBe true }
     repo
+  }
+
+  def setupChainedRepo() = {
+    import Matchers._
+
+    implicit val exec: ExecutionContext = ExecutionContexts.global()
+
+    val repo1 = new SimpleUserRepository()
+    val fa = repo1.put(userA.name, userA)
+    val fb = repo1.put(userB.name, userB)
+    whenReady (fa) { or => or.isGood shouldBe true }
+    whenReady (fb) { or => or.isGood shouldBe true }
+
+    val repo2 = new SimpleUserRepository(Some(Set(userC, userD)))
+    repo1 orElse repo2
   }
 }

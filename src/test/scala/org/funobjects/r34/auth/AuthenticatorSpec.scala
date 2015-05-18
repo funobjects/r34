@@ -29,15 +29,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class AuthenticatorSpec extends FlatSpec with Matchers {
 
   "Authenticator" should "return an Identified[SimpleUser] for a valid user"  in {
-    implicit val userRepo = SimpleUserRepositorySpec.setupRepo
+    implicit val userRepo = UserRepositorySpec.setupRepo
     implicit val simpleAuth = new SimpleAuthenticator()
 
     val auth = Authenticate("userA", "passA")
-    auth.futureValue shouldBe Good(Identified(SimpleUserRepositorySpec.userA))
+    auth.futureValue shouldBe Good(Identified(UserRepositorySpec.userA))
   }
 
   "Authenticator" should "return an Issue for an invalid user"  in {
-    implicit val userRepo = SimpleUserRepositorySpec.setupRepo
+    implicit val userRepo = UserRepositorySpec.setupRepo
     implicit val simpleAuth = new SimpleAuthenticator()
 
     val auth = Authenticate("userC", "passA")
@@ -48,7 +48,7 @@ class AuthenticatorSpec extends FlatSpec with Matchers {
   }
 
   "Authenticator" should "return an Issue for an invalid password"  in {
-    implicit val userRepo = SimpleUserRepositorySpec.setupRepo
+    implicit val userRepo = UserRepositorySpec.setupRepo
     implicit val simpleAuth = new SimpleAuthenticator()
 
     val auth = Authenticate("userA", "passB")

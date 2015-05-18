@@ -20,6 +20,8 @@ class RepositorySpec(sys: ActorSystem) extends TestKit(sys) with WordSpecLike wi
     sys.shutdown()
   }
 
+  lazy implicit val exec = sys.dispatcher
+
   "TokenRepositoryActor" should {
     "do some stuff" in {
       import BearerTokenRepository._

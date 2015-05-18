@@ -17,9 +17,9 @@
 package org.funobjects.r34.directives
 
 
-import akka.http.model.headers.{OAuth2BearerToken, Authorization}
-import akka.http.server.Directives._
-import akka.http.server._
+import akka.http.scaladsl.model.headers.{OAuth2BearerToken, Authorization}
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server._
 
 import org.funobjects.r34.Repository
 

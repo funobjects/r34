@@ -17,12 +17,12 @@
 package org.funobjects.r34
 
 import akka.actor.ActorSystem
-import akka.http.Http
-import akka.http.common.StrictForm
-import akka.http.model.headers._
-import akka.http.server.Directives._
-import akka.http.model._
-import akka.stream.scaladsl.{Flow, Source}
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.common.StrictForm
+import akka.http.scaladsl.model.headers._
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.model._
+import akka.stream.scaladsl.{Sink, Flow, Source}
 import akka.stream.ActorFlowMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
 
@@ -39,7 +39,7 @@ import org.scalactic.{Bad, Good}
 
 import scala.concurrent.{Future, ExecutionContext}
 import scala.concurrent.duration._
-import scala.util.{Success, Try}
+import scala.util.{Failure, Success, Try}
 import scala.util.control.NonFatal
 
 case class Outer(a: String, b: Option[String], inner: Inner, maybe: Option[Inner] )
@@ -122,6 +122,24 @@ trait Server {
           )
         }
       } ~
+      (post & path("intake")) {
+        extractRequest {
+          case HttpRequest(HttpMethods.POST, _, _, entity, _) =>
+            complete {
+              entity match {
+                case entity @ HttpEntity.Chunked(ctype, src) =>
+                  src.runForeach(chunk => println(s"CHUNK: + ${chunk.data().toString()}"))
+                //src.runForeach { chunk => println(s"CHUNK: + ${chunk.data.toString}")}.map { () =>  }
+                //                .onComplete {
+                //                case Success(_) => HttpResponse(StatusCodes.OK)
+                //                case Failure(_) => HttpResponse(StatusCodes.InternalServerError)
+                case _ =>
+              }
+              HttpResponse(StatusCodes.OK)
+            }
+            case _ => complete(Future.successful(HttpResponse(StatusCodes.BadRequest)))
+          }
+      } ~
       web.TokenRequest.routes
     }
   }
@@ -131,7 +149,11 @@ object Main extends App with Server {
 
   val akkaConfig: Config = ConfigFactory.parseString("""
       akka.loglevel = INFO
-      akka.log-dead-letters = off""")
+      akka.log-dead-letters = off
+      akka.persistence.journal.plugin = funobjects-akka-orientdb-journal
+      prime.id =
+      """)
+
 
   override implicit val sys = ActorSystem("r34", akkaConfig)
   override implicit val flows = ActorFlowMaterializer()
@@ -146,6 +168,7 @@ object Main extends App with Server {
   }
 
   val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).runForeach { connection =>
+    println(s"connect =>")
     connection.handleWith(router)
   }
 }

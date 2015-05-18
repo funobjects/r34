@@ -17,8 +17,8 @@
 package org.funobjects.r34.web
 
 import akka.actor.ActorSystem
-import akka.http.model._
-import akka.http.server.Directives._
+import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorFlowMaterializer
 import org.funobjects.r34.Repository
 import org.funobjects.r34.auth.Authenticate._
