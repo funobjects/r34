@@ -19,7 +19,7 @@ package org.funobjects.r34.auth
 import akka.actor.{Props, Actor, ActorSystem}
 import akka.pattern.ask
 import akka.util.Timeout
-import org.funobjects.r34.{Repository, Issue}
+import org.funobjects.r34.{Store, Issue}
 import org.scalactic.{Good, Every, Or}
 
 import scala.concurrent.Future
@@ -30,11 +30,11 @@ case class TokenEntry[U](user: U, papers: Permits, expires: Option[Long])
 /**
  * A simple in-memory token repository based on a concurrent Map.
  */
-class BearerTokenRepository(implicit sys: ActorSystem) extends Repository[BearerToken, TokenEntry[SimpleUser]] {
+class BearerTokenStore(implicit sys: ActorSystem) extends Store[BearerToken, TokenEntry[SimpleUser]] {
 
-  import BearerTokenRepository._
+  import BearerTokenStore._
 
-  val actor = sys.actorOf(Props[BearerTokenRepositoryActor])
+  val actor = sys.actorOf(Props[BearerTokenStoreActor])
   implicit val exec = sys.dispatcher
   implicit val timeout = Timeout(1.second)
 
@@ -57,7 +57,7 @@ class BearerTokenRepository(implicit sys: ActorSystem) extends Repository[Bearer
   }
 }
 
-object BearerTokenRepository {
+object BearerTokenStore {
 
   type Entry = TokenEntry[SimpleUser]
   type PossibleEntry = Option[Entry] Or Every[Issue]
@@ -79,9 +79,9 @@ object BearerTokenRepository {
   case class RemoveEntriesForUserResponse(key: BearerToken, result: PossibleEntry) extends Resp
 }
 
-class BearerTokenRepositoryActor extends Actor {
+class BearerTokenStoreActor extends Actor {
 
-  import BearerTokenRepository._
+  import BearerTokenStore._
 
   val map = collection.mutable.Map[BearerToken, TokenEntry[SimpleUser]]()
 

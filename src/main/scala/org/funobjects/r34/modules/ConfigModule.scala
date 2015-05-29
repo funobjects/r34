@@ -1,13 +1,13 @@
-package org.funobjects.r34
+package org.funobjects.r34.modules
 
 import akka.actor.{ActorSystem, Props}
-import akka.http.scaladsl.model.{StatusCodes, HttpResponse}
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.Route
 import akka.persistence.PersistentActor
 import akka.stream.FlowMaterializer
-
 import com.typesafe.config.Config
+import org.funobjects.r34.ResourceModule
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -17,7 +17,7 @@ import scala.concurrent.duration._
  *
  * @author Robert Fries
  */
-class PrimeResourceModule(id: String)(implicit val sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule()(sys, exec, flows) {
+class ConfigModule(id: String)(implicit val sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule()(sys, exec, flows) {
 
   override val name = "prime"
 
@@ -28,32 +28,37 @@ class PrimeResourceModule(id: String)(implicit val sys: ActorSystem, exec: Execu
     logRequestResult("r34") {
       path("shutdown") {
         complete {
+          // TODO: perhaps some notification to the modules would be nice....
           sys.scheduler.scheduleOnce(1.second) { sys.shutdown() }
           HttpResponse(StatusCodes.OK)
         }
+      }
+      path("r") {
+        // TODO: resource module paths go here
+        complete(HttpResponse(StatusCodes.OK))
       }
     }
   }
 }
 
-object PrimeResourceModule {
+object ConfigModule {
 
-  sealed trait PrimeResourceCmd
+  sealed trait ConfigCmd
 
-  case class Shutdown(reason: String = "None")  extends PrimeResourceCmd
-  case class NewConfig(cfg: Config) extends PrimeResourceCmd
-  case class NewConfigIfMatching(cfg: Config, expected: Config) extends PrimeResourceCmd
-  case class MergeConfig(cfg: Config) extends PrimeResourceCmd
-  case class MergeConfigIfMatching(cfg: Config, expected: Config) extends PrimeResourceCmd
+  case class Shutdown(reason: String = "None")  extends ConfigCmd
+  case class NewConfig(cfg: Config) extends ConfigCmd
+  case class CheckAndSetConfig(cfg: Config, expected: Config) extends ConfigCmd
+  case class MergeConfig(cfg: Config) extends ConfigCmd
+  case class CheckAndMergeConfig(cfg: Config, expected: Config) extends ConfigCmd
 
   case class LoadResourceModule(resourceModule: ResourceModule)
   case class UnloadResourceModule(name: String)
 
-  case object GetConfig extends PrimeResourceCmd
+  case object GetConfig extends ConfigCmd
 
   case class ConfigResponse(cfg: Config)
 
-  sealed trait Ev
+  sealed trait PrimeResourceEvent
 
 }
 

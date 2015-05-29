@@ -33,20 +33,16 @@ import scala.concurrent.duration._
  */
 class DebugResources(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule()(sys, exec, flows) {
   override val name: String = "debug"
-  override val routes: Option[Route] = Some(debugRoutes)
 
-  def debugRoutes: Route = {
+  override val routes: Some[Route] = Some {
     (get & path("clock")) {
       complete {
         HttpResponse(StatusCodes.OK,
           entity = HttpEntity.Chunked(ContentTypes.`text/plain(UTF-8)`,
-            Source(0.seconds, 15.seconds, 0)
-              .mapMaterialized(c => ())
-              .via(Flow[Int].map(tick => HttpEntity.ChunkStreamPart(s"${new java.util.Date}\n")))
+            Source(0.seconds, 15.seconds, 0).via(Flow[Int].map(tick => HttpEntity.ChunkStreamPart(s"${new java.util.Date}\n")))
           )
         )
       }
-
     }
   }
 }

@@ -20,7 +20,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Directives._
 import akka.stream.ActorFlowMaterializer
-import org.funobjects.r34.Repository
+import org.funobjects.r34.{Store, Repository}
 import org.funobjects.r34.auth.Authenticate._
 import org.funobjects.r34.auth._
 import org.json4s._
@@ -52,7 +52,7 @@ object TokenRequest {
     flows: ActorFlowMaterializer,
     executionContext: ExecutionContext,
     userRepository: Repository[String, SimpleUser],
-    tokenRepository: Repository[BearerToken, TokenEntry[SimpleUser]]) = {
+    tokenRepository: Store[BearerToken, TokenEntry[SimpleUser]]) = {
 
     implicit val formats = org.json4s.DefaultFormats
 

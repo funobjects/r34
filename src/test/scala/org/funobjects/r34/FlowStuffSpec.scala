@@ -3,7 +3,7 @@ package org.funobjects.r34
 import akka.actor.ActorSystem
 import akka.stream.ActorFlowMaterializer
 import akka.stream.scaladsl._
-import org.funobjects.r34.auth.{Identified, SimpleUserRepository, SimpleUser}
+import org.funobjects.r34.auth.{Identified, SimpleUserStore, SimpleUser}
 import org.scalactic.{Good, Bad, Or, Every}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
@@ -26,7 +26,7 @@ class FlowStuffSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
 
       type idUserOrError = Identified[SimpleUser] Or Every[Issue]
 
-      implicit val userRepository: SimpleUserRepository = new SimpleUserRepository(Some(Set(
+      implicit val userRepository: SimpleUserStore = new SimpleUserStore(Some(Set(
         SimpleUser("userA", "passA"),
         SimpleUser("userB", "passB")
       ))) {

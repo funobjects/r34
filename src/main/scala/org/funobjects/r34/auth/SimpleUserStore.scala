@@ -16,10 +16,10 @@
 
 package org.funobjects.r34.auth
 
-import org.funobjects.r34.InMemoryRepository
+import org.funobjects.r34.MemoryStore
 
 import scala.concurrent.ExecutionContext
 
-class SimpleUserRepository(init: Option[Set[SimpleUser]] = None)(implicit exec: ExecutionContext) extends InMemoryRepository[String, SimpleUser]()(exec) {
+class SimpleUserStore(init: Option[Set[SimpleUser]] = None)(implicit exec: ExecutionContext) extends MemoryStore[String, SimpleUser]()(exec) {
   for (users <- init; user <- users) map.put(user.name, user)
 }

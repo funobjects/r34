@@ -24,8 +24,8 @@ class RepositorySpec(sys: ActorSystem) extends TestKit(sys) with WordSpecLike wi
 
   "TokenRepositoryActor" should {
     "do some stuff" in {
-      import BearerTokenRepository._
-      val actor = TestActorRef[BearerTokenRepositoryActor]
+      import BearerTokenStore._
+      val actor = TestActorRef[BearerTokenStoreActor]
 
       val token = BearerToken.generate(12)
       val user = SimpleUser("a", "a")

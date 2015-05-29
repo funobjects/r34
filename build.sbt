@@ -11,7 +11,7 @@ resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/release
 libraryDependencies ++= {
   object v {
     val akka        = "2.3.11"
-    val akkaHttp    = "1.0-RC2"
+    val akkaHttp    = "1.0-RC3"
     val orientDb    = "2.0.8"
     val nimbus      = "3.9.2"
     val scalatest   = "2.2.4"
@@ -23,7 +23,7 @@ libraryDependencies ++= {
   }
   Seq(
     "com.typesafe.akka"     %% "akka-http-core-experimental"        % v.akkaHttp    withSources(),
-    "com.typesafe.akka"     %% "akka-http-scala-experimental"       % v.akkaHttp    withSources(),
+    "com.typesafe.akka"     %% "akka-http-experimental"             % v.akkaHttp    withSources(),
     "com.typesafe.akka"     %% "akka-stream-experimental"           % v.akkaHttp    withSources(),
     "com.typesafe.akka"     %% "akka-http-spray-json-experimental"  % v.akkaHttp    withSources(),
     "com.typesafe"          %  "config"                             % v.config      withSources(),

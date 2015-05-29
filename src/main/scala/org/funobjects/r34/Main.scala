@@ -22,11 +22,13 @@ import akka.http.scaladsl.common.StrictForm
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.server.Route
 import akka.stream.scaladsl.{Sink, Flow, Source}
 import akka.stream.ActorFlowMaterializer
-import com.typesafe.config.{ConfigFactory, Config}
+import com.typesafe.config.{ConfigException, ConfigFactory, Config}
 
 import org.funobjects.r34.directives.R34Directives.oauth2
+import org.funobjects.r34.modules.ConfigModule
 
 import org.json4s._
 import org.json4s.JsonDSL._
@@ -47,13 +49,17 @@ case class Inner(n: Int, m: Option[Int])
 
 trait Server {
   implicit val userRepository: Repository[String, SimpleUser]
-  implicit val tokenRepository: Repository[BearerToken, TokenEntry[SimpleUser]]
+  implicit val tokenRepository: Store[BearerToken, TokenEntry[SimpleUser]]
   implicit val sys: ActorSystem
   implicit val flows: ActorFlowMaterializer
   implicit val exec: ExecutionContext
 
   // default json4s extractors
   implicit val formats = org.json4s.DefaultFormats
+
+  val debugResources = new DebugResources()
+
+  val noRoute: Route = { reject }
 
   def router = {
     logRequestResult("r34") {
@@ -111,17 +117,6 @@ trait Server {
           }
         }
       } ~
-      path("clock") {
-        complete {
-          HttpResponse(StatusCodes.OK,
-            entity = HttpEntity.Chunked(ContentTypes.`text/plain(UTF-8)`,
-              Source(0.seconds, 15.seconds, 0)
-                .mapMaterialized(c => ())
-                .via(Flow[Int].map(tick => HttpEntity.ChunkStreamPart(s"${new java.util.Date}\n")))
-            )
-          )
-        }
-      } ~
       (post & path("intake")) {
         extractRequest {
           case HttpRequest(HttpMethods.POST, _, _, entity, _) =>
@@ -140,32 +135,37 @@ trait Server {
             case _ => complete(Future.successful(HttpResponse(StatusCodes.BadRequest)))
           }
       } ~
-      web.TokenRequest.routes
+      web.TokenRequest.routes ~
+      debugResources.routes.getOrElse(noRoute)
     }
   }
 }
 
 object Main extends App with Server {
 
+  val instanceId = Option(System.getProperty("r34.id")).getOrElse("anonymous")
+
+  // TODO: set up real config
   val akkaConfig: Config = ConfigFactory.parseString("""
       akka.loglevel = INFO
       akka.log-dead-letters = off
       akka.persistence.journal.plugin = funobjects-akka-orientdb-journal
-      prime.id =
+      prime.id = α
       """)
-
 
   override implicit val sys = ActorSystem("r34", akkaConfig)
   override implicit val flows = ActorFlowMaterializer()
   override implicit val exec = sys.dispatcher
 
-  override val userRepository: SimpleUserRepository = new SimpleUserRepository(Some(Set(
+  val configModule = new modules.ConfigModule(instanceId)
+  val configActor = configModule.props map sys.actorOf
+
+  override val userRepository: SimpleUserStore = new SimpleUserStore(Some(Set(
     SimpleUser("userA", "passA"),
     SimpleUser("userB", "passB")
   )))
 
-  override val tokenRepository = new InMemoryRepository[BearerToken, TokenEntry[SimpleUser]]() {
-  }
+  override val tokenRepository = new MemoryStore[BearerToken, TokenEntry[SimpleUser]]() {}
 
   val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).runForeach { connection =>
     println(s"connect =>")
