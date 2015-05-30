@@ -15,24 +15,22 @@ trait Repository[K, V] { self =>
 
   val syncTimeout = 1.second
 
-  def getEntry(key: K): Future[Option[V] Or Every[Issue]]
-
-  def get(key: K): Future[Option[V] Or Every[Issue]] = getEntry(key)
+  def get(key: K): Future[Option[V] Or Every[Issue]]
 
   def getSync(key: K): Option[V] Or Every[Issue] =
     Await.result(get(key), syncTimeout)
 
-
   def orElse(nextRepo: Repository[K, V]): Repository[K, V] = new Repository[K, V] {
 
-    override implicit val exec: ExecutionContext = implicitly[ExecutionContext]
+    override implicit val exec: ExecutionContext = self.exec
 
-    override def getEntry(key: K): Future[Or[Option[V], Every[Issue]]] =
-      self.getEntry(key) flatMap {
+    override def get(key: K): Future[Or[Option[V], Every[Issue]]] = {
+      self.get(key) flatMap {
         case Good(None) => nextRepo.get(key)
         case g @ Good(_) => Future.successful(g)
         case b @ Bad(_) => Future.successful(b)
       }
+    }
   }
 }
 

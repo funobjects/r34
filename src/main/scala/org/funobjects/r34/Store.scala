@@ -24,17 +24,17 @@ import scala.concurrent.{Await, Future}
  * A repository that supports updates and removal of entries.
  */
 trait Store[K, V] extends Repository[K, V] {
-  def putEntry(key: K, value: V): Future[Option[V] Or Every[Issue]]
+  def put(key: K, value: V): Future[Option[V] Or Every[Issue]]
 
-  def removeEntry(key: K): Future[Option[V] Or Every[Issue]]
+  def remove(key: K): Future[Option[V] Or Every[Issue]]
 
-  def put(key: K, value: V): Future[Option[V] Or Every[Issue]] = putEntry(key, value)
-
-  def remove(key: K): Future[Option[V] Or Every[Issue]] = removeEntry(key)
+//  def aroundPut(key: K, value: V): Future[Option[V] Or Every[Issue]] = put(key, value)
+//
+//  def aroundRemove(key: K): Future[Option[V] Or Every[Issue]] = remove(key)
 
   def putSync(key: K, value: V): Option[V] Or Every[Issue] =
-    Await.result(get(key), syncTimeout)
+    Await.result(put(key, value), syncTimeout)
 
   def removeSync(key: K): Option[V] Or Every[Issue] =
-    Await.result(get(key), syncTimeout)
+    Await.result(remove(key), syncTimeout)
 }

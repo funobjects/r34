@@ -18,30 +18,25 @@ package org.funobjects.r34
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.common.StrictForm
-import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Route
-import akka.stream.scaladsl.{Sink, Flow, Source}
 import akka.stream.ActorFlowMaterializer
-import com.typesafe.config.{ConfigException, ConfigFactory, Config}
+import com.typesafe.config.{ConfigFactory, Config}
 
 import org.funobjects.r34.directives.R34Directives.oauth2
-import org.funobjects.r34.modules.ConfigModule
+import org.funobjects.r34.modules.{Aggregation, LocalAdmin, ConfigModule}
 
 import org.json4s._
-import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
-import org.json4s.jackson.Serialization
-import org.json4s.jackson.Serialization.{read, write, writePretty}
+import org.json4s.jackson.Serialization.{write, writePretty}
 
 import org.funobjects.r34.auth._
 import org.scalactic.{Bad, Good}
 
 import scala.concurrent.{Future, ExecutionContext}
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 import scala.util.control.NonFatal
 
 case class Outer(a: String, b: Option[String], inner: Inner, maybe: Option[Inner] )
@@ -157,8 +152,12 @@ object Main extends App with Server {
   override implicit val flows = ActorFlowMaterializer()
   override implicit val exec = sys.dispatcher
 
-  val configModule = new modules.ConfigModule(instanceId)
-  val configActor = configModule.props map sys.actorOf
+  val configModule = new ConfigModule(instanceId)
+  val adminModule = new LocalAdmin()
+  val all = new Aggregation(instanceId, List(configModule, adminModule))
+
+  //val configModule = new modules.Aggregate(instanceId)
+  //val configActor = configModule.props map sys.actorOf
 
   override val userRepository: SimpleUserStore = new SimpleUserStore(Some(Set(
     SimpleUser("userA", "passA"),

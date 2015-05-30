@@ -27,6 +27,19 @@ class UserRepositorySpec extends FlatSpec with Matchers {
     }
   }
 
+  "SimpleUserRepository" should "return valid users when chained"  in {
+    implicit val userRepo = setupChainedRepo()
+
+    {
+      val f = userRepo.get("userA")
+      f.futureValue shouldEqual Good(Some(userA))
+    }
+    {
+      val f = userRepo.get("userC")
+      f.futureValue shouldEqual Good(Some(userC))
+    }
+  }
+
   "SimpleUserRepository" should "not return invalid users"  in {
     implicit val userRepo = setupRepo()
 

@@ -38,19 +38,19 @@ class BearerTokenStore(implicit sys: ActorSystem) extends Store[BearerToken, Tok
   implicit val exec = sys.dispatcher
   implicit val timeout = Timeout(1.second)
 
-  override def getEntry(key: BearerToken): FutureEntry = {
+  override def get(key: BearerToken): FutureEntry = {
     (actor ? GetEntry(key)).mapTo[GetEntryResponse] map { resp =>
       resp.value
     }
   }
 
-  override def putEntry(key: BearerToken, value: TokenEntry[SimpleUser]): FutureEntry = {
+  override def put(key: BearerToken, value: TokenEntry[SimpleUser]): FutureEntry = {
     (actor ? PutEntry(key, value)).mapTo[PutEntryResponse] map { resp =>
       resp.result
     }
   }
 
-  override def removeEntry(key: BearerToken): FutureEntry = {
+  override def remove(key: BearerToken): FutureEntry = {
     (actor ? RemoveEntry(key)).mapTo[RemoveEntryResponse] map { resp =>
       resp.result
     }
