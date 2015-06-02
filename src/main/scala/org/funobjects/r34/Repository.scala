@@ -11,8 +11,6 @@ import scala.concurrent.duration.DurationInt
  */
 trait Repository[K, V] { self =>
 
-  implicit val exec: ExecutionContext
-
   val syncTimeout = 1.second
 
   def get(key: K): Future[Option[V] Or Every[Issue]]
@@ -20,9 +18,7 @@ trait Repository[K, V] { self =>
   def getSync(key: K): Option[V] Or Every[Issue] =
     Await.result(get(key), syncTimeout)
 
-  def orElse(nextRepo: Repository[K, V]): Repository[K, V] = new Repository[K, V] {
-
-    override implicit val exec: ExecutionContext = self.exec
+  def orElse(nextRepo: Repository[K, V])(implicit exec: ExecutionContext): Repository[K, V] = new Repository[K, V] {
 
     override def get(key: K): Future[Or[Option[V], Every[Issue]]] = {
       self.get(key) flatMap {

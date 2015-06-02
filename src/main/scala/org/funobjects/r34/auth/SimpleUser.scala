@@ -18,6 +18,6 @@ package org.funobjects.r34.auth
 
 import scala.language.implicitConversions
 
-case class SimpleUser(name: String, password: String)
+case class SimpleUser(name: String, password: String, isDeleted: Boolean = false)
 
 

@@ -28,10 +28,6 @@ trait Store[K, V] extends Repository[K, V] {
 
   def remove(key: K): Future[Option[V] Or Every[Issue]]
 
-//  def aroundPut(key: K, value: V): Future[Option[V] Or Every[Issue]] = put(key, value)
-//
-//  def aroundRemove(key: K): Future[Option[V] Or Every[Issue]] = remove(key)
-
   def putSync(key: K, value: V): Option[V] Or Every[Issue] =
     Await.result(put(key, value), syncTimeout)
 

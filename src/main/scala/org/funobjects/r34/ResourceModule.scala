@@ -34,4 +34,6 @@ trait ResourceModuleLike {
   val subsriptions: List[String] = Nil
 }
 
-abstract class ResourceModule(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModuleLike
+abstract class ResourceModule(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModuleLike {
+  def start() = props.foreach(sys.actorOf(_, name))
+}

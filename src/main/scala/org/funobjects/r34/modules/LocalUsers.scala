@@ -19,39 +19,31 @@ package org.funobjects.r34.modules
 import akka.actor.{Props, Actor, ActorLogging, ActorSystem}
 import akka.persistence.PersistentActor
 import akka.stream.FlowMaterializer
-import org.funobjects.r34.ResourceModule
+import org.funobjects.r34.{Repository, ResourceModule}
+import org.funobjects.r34.auth.SimpleUser
 
 import scala.concurrent.ExecutionContext
 
 /**
- * Created by rgf on 5/29/15.
+ * Local user DB
  */
-case class LocalUsers(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule()(sys, exec, flows) {
-  override val name: String = "userdb"
+class LocalUsers()(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer)
+  extends StorageModule[SimpleUser]("user")(sys, exec, flows) {
+
+  import StorageModule._
+
   override val routes = None
-  override val props = Some(Props[LocalUsers.UserActor])
-}
 
-object LocalUsers {
+  //override def repository: Repository[String, SimpleUser] = ???
 
-
-
-  class UserManager extends Actor with ActorLogging {
-    override def receive: Receive = {
-      case _ =>
+  override def foldEvent[EV <: EntityEvent](ev: EV, user: SimpleUser): SimpleUser = ev match {
+    case EntityUpdated(newEntity) => newEntity match {
+      case u: SimpleUser => u
+      case _ => user
     }
+
+    case EntityRemoved(id) => user.copy(isDeleted = true, password = "")
   }
 
-  class UserActor(uid: String) extends PersistentActor {
-
-    override def persistenceId: String = "uid:" + uid
-
-    override def receiveRecover: Receive = {
-      case _ =>
-    }
-
-    override def receiveCommand: Receive = {
-      case _ =>
-    }
-  }
+  override def isDeleted(entity: SimpleUser): Boolean = entity.isDeleted
 }

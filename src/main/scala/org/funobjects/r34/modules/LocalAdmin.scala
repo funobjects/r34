@@ -16,11 +16,15 @@
 
 package org.funobjects.r34.modules
 
+import akka.actor.ActorSystem
+import akka.stream.FlowMaterializer
 import org.funobjects.r34.ResourceModule
+
+import scala.concurrent.ExecutionContext
 
 /**
  * Created by rgf on 5/29/15.
  */
-class LocalAdmin extends ResourceModule {
+class LocalAdmin(implicit val sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule {
   override val name: String = "admin"
 }
