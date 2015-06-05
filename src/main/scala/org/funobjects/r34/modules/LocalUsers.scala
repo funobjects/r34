@@ -37,7 +37,7 @@ class LocalUsers()(implicit sys: ActorSystem, exec: ExecutionContext, flows: Flo
   //override def repository: Repository[String, SimpleUser] = ???
 
   override def foldEvent[EV <: EntityEvent](ev: EV, user: SimpleUser): SimpleUser = ev match {
-    case EntityUpdated(newEntity) => newEntity match {
+    case EntityUpdated(id, newEntity) => newEntity match {
       case u: SimpleUser => u
       case _ => user
     }
