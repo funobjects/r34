@@ -30,20 +30,15 @@ import scala.concurrent.ExecutionContext
 class LocalUsers()(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer)
   extends StorageModule[SimpleUser]("user")(sys, exec, flows) {
 
-  import StorageModule._
-
   override val routes = None
 
   //override def repository: Repository[String, SimpleUser] = ???
 
-  override def foldEvent[EV <: EntityEvent](ev: EV, user: SimpleUser): SimpleUser = ev match {
-    case EntityUpdated(id, newEntity) => newEntity match {
-      case u: SimpleUser => u
-      case _ => user
-    }
-
-    case EntityRemoved(id) => user.copy(isDeleted = true, password = "")
-  }
 
   override def isDeleted(entity: SimpleUser): Boolean = entity.isDeleted
+
+  /**
+   * Returns a copy of the entity which has been marked for deletion.
+   */
+  override def deleted(entity: SimpleUser): SimpleUser = entity.copy(isDeleted = true)
 }

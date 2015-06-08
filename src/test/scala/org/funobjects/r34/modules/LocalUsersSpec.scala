@@ -49,6 +49,7 @@ class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   "The LocalUsers module" should {
     "support adding entries" in {
       val mod = new LocalUsers()
+      val user = SimpleUser("a", "pass")
 
       mod.start()
       val maybeStore = mod.store
@@ -56,17 +57,37 @@ class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       val store = maybeStore.get
 
-      val fput = store.put("a", SimpleUser("a", "ap"))
+      val fput = store.put("a", user)
 
-      fput.futureValue shouldBe Good(None)
-      whenReady(fput, timeout(tm)) {
-        case Good(Some(user)) =>
-          user shouldBe SimpleUser("a", "ap")
-        case Good(None) =>
-          fail("User not found.")
-        case Bad(issues) =>
-          fail(s"User lookup error: $issues")
+      //fput.futureValue shouldBe Good(None)
+
+
+      whenReady(fput, timeout(tm)) { u =>
+        u shouldBe Good(None)
+//        case Good(Some(user)) =>
+//          user shouldBe SimpleUser("a", "ap")
+//        case Good(None) =>
+//          fail("User not found.")
+//        case Bad(issues) =>
+//          fail(s"User lookup error: $issues")
       }
+
+      val fget = store.get("a")
+      whenReady(fget, timeout(tm)) { u =>
+        u shouldBe Good(Some(user))
+      }
+
+      val fdel = store.remove("a")
+      whenReady(fdel, timeout(tm)) { u =>
+        u shouldBe Good(Some(user))
+      }
+
+      val fget2 = store.get("a")
+      whenReady(fget2, timeout(tm)) { u =>
+        u shouldBe Good(None)
+      }
+
+
     }
   }
 

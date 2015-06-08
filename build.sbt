@@ -8,6 +8,8 @@ resolvers += Resolver.sonatypeRepo("public")
 
 resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
 
+fork := true
+
 libraryDependencies ++= {
   object v {
     val akka        = "2.3.11"
