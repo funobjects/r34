@@ -23,9 +23,10 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorFlowMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
+import org.funobjects.r34.auth
 
 import org.funobjects.r34.directives.R34Directives.oauth2
-import org.funobjects.r34.modules.{Aggregation, LocalAdmin, ConfigModule}
+import org.funobjects.r34.modules.{TokenModule, Aggregation, LocalAdmin, ConfigModule}
 
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
@@ -43,8 +44,8 @@ case class Outer(a: String, b: Option[String], inner: Inner, maybe: Option[Inner
 case class Inner(n: Int, m: Option[Int])
 
 trait Server {
-  implicit val userRepository: Repository[String, SimpleUser]
-  implicit val tokenRepository: Store[BearerToken, TokenEntry[SimpleUser]]
+//  implicit val userRepository: Repository[String, SimpleUser]
+//  implicit val tokenRepository: Store[BearerToken, xTokenEntry[SimpleUser]]
   implicit val sys: ActorSystem
   implicit val flows: ActorFlowMaterializer
   implicit val exec: ExecutionContext
@@ -69,14 +70,14 @@ trait Server {
           HttpResponse(StatusCodes.OK, entity = writePretty(SimpleUser("a", "b")))
         }
       } ~
-      (get & path("tauth")) {
-        oauth2(tokenRepository) { user =>
-          println(s"*** user: $user")
-          complete {
-            HttpResponse(StatusCodes.OK)
-          }
-        }
-      } ~
+//      (get & path("tauth")) {
+//        oauth2(tokenRepository) { user =>
+//          println(s"*** user: $user")
+//          complete {
+//            HttpResponse(StatusCodes.OK)
+//          }
+//        }
+//      } ~
       (post & path("outer") & extract(_.request.entity)) { entity =>
         complete {
           entity.toStrict(1.second) map { strict =>
@@ -90,20 +91,20 @@ trait Server {
           }
         }
       } ~
-      (get & path("user" / Segment)) { userId =>
-        // TODO: how to enforce size limits on URL and segment ??
-        oauth2(tokenRepository) { identifiedUser =>
-          complete {
-            userRepository.get(userId) map {
-              case Good(Some(user)) => HttpResponse(StatusCodes.OK, entity = HttpEntity(write(user)))
-              case Good(None)       => HttpResponse(StatusCodes.NotFound)
-              case Bad(issues)      => HttpResponse(StatusCodes.BadRequest)
-            } recover {
-              case NonFatal(ex)     => HttpResponse(StatusCodes.InternalServerError)
-            }
-          }
-        }
-      } ~
+//      (get & path("user" / Segment)) { userId =>
+//        // TODO: how to enforce size limits on URL and segment ??
+//        oauth2(tokenRepository) { identifiedUser =>
+//          complete {
+//            userRepository.get(userId) map {
+//              case Good(Some(user)) => HttpResponse(StatusCodes.OK, entity = HttpEntity(write(user)))
+//              case Good(None)       => HttpResponse(StatusCodes.NotFound)
+//              case Bad(issues)      => HttpResponse(StatusCodes.BadRequest)
+//            } recover {
+//              case NonFatal(ex)     => HttpResponse(StatusCodes.InternalServerError)
+//            }
+//          }
+//        }
+//      } ~
       path("form") {
         formFields('a, "b", "c".?) { (a, b, c) =>
           complete {
@@ -130,7 +131,7 @@ trait Server {
             case _ => complete(Future.successful(HttpResponse(StatusCodes.BadRequest)))
           }
       } ~
-      web.TokenRequest.routes ~
+      //auth.TokenRequest.routes ~
       debugResources.routes.getOrElse(noRoute)
     }
   }
@@ -154,17 +155,8 @@ object Main extends App with Server {
 
   val configModule = new ConfigModule(instanceId)
   val adminModule = new LocalAdmin()
-  val all = new Aggregation(instanceId, List(configModule, adminModule))
-
-  //val configModule = new modules.Aggregate(instanceId)
-  //val configActor = configModule.props map sys.actorOf
-
-  override val userRepository: SimpleUserStore = new SimpleUserStore(Some(Set(
-    SimpleUser("userA", "passA"),
-    SimpleUser("userB", "passB")
-  )))
-
-  override val tokenRepository = new MemoryStore[BearerToken, TokenEntry[SimpleUser]]() {}
+  val tokenModule = new TokenModule[SimpleUser]()
+  val all = new Aggregation(instanceId, List(configModule, adminModule, tokenModule))
 
   val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).runForeach { connection =>
     println(s"connect =>")

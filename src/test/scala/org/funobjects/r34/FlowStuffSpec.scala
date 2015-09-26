@@ -40,7 +40,7 @@ class FlowStuffSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
         = Source(userRepository.get(name)).toMat(Sink.head)(Keep.right)
 
       def flowUserRemove(name: String): RunnableFlow[Future[Option[SimpleUser] Or Every[Issue]]]
-        = Source(userRepository.remove(name)).toMat(Sink.head)(Keep.right)
+        = Source(userRepository.delete(name)).toMat(Sink.head)(Keep.right)
 
       def completeUserOption(results: Try[Option[SimpleUser] Or Every[Issue]]) = results match {
         case Success(Good(user)) => println(s"found user $user")

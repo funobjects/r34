@@ -20,6 +20,7 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.{FlowMaterializer, ActorFlowMaterializer}
 import com.typesafe.config.{ConfigFactory, Config}
 import org.funobjects.r34.auth.SimpleUser
+import org.funobjects.r34.modules.StorageModule.ModuleDeleteAll
 import org.scalactic.{Bad, Good}
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
@@ -34,7 +35,7 @@ import scala.concurrent.duration._
 class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
   val akkaConfig: Config = ConfigFactory.parseString("""
-      akka.loglevel = DEBUG
+      akka.loglevel = WARNING
       akka.log-dead-letters = off
       akka.persistence.journal.plugin = funobjects-akka-orientdb-journal
       prime.id = α
@@ -44,48 +45,55 @@ class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   implicit val flows: FlowMaterializer = ActorFlowMaterializer()
   implicit val exec: ExecutionContext = sys.dispatcher
 
-  val tm = Span(5, Seconds)
+  implicit val tm = Span(5, Seconds)
+  implicit val patienceConfig = PatienceConfig(tm , tm)
 
   "The LocalUsers module" should {
     "support adding entries" in {
       val mod = new LocalUsers()
       val user = SimpleUser("a", "pass")
 
-      mod.start()
+      val ref = mod.start()
+      ref shouldBe 'defined
+
       val maybeStore = mod.store
-      maybeStore shouldBe a [Some[_]]
+      maybeStore shouldBe 'defined
 
       val store = maybeStore.get
 
-      val fput = store.put("a", user)
-
-      //fput.futureValue shouldBe Good(None)
-
-
-      whenReady(fput, timeout(tm)) { u =>
-        u shouldBe Good(None)
-//        case Good(Some(user)) =>
-//          user shouldBe SimpleUser("a", "ap")
-//        case Good(None) =>
-//          fail("User not found.")
-//        case Bad(issues) =>
-//          fail(s"User lookup error: $issues")
-      }
-
       val fget = store.get("a")
-      whenReady(fget, timeout(tm)) { u =>
-        u shouldBe Good(Some(user))
-      }
+      fget.futureValue shouldBe Good(None)
 
-      val fdel = store.remove("a")
-      whenReady(fdel, timeout(tm)) { u =>
-        u shouldBe Good(Some(user))
-      }
+      val fput = store.update("a", user)
+      fput.futureValue shouldBe Good(None)
 
-      val fget2 = store.get("a")
-      whenReady(fget2, timeout(tm)) { u =>
-        u shouldBe Good(None)
-      }
+      ref.get ! ModuleDeleteAll
+
+
+//      whenReady(fput, timeout(tm)) { u =>
+//        u shouldBe Good(None)
+////        case Good(Some(user)) =>
+////          user shouldBe SimpleUser("a", "ap")
+////        case Good(None) =>
+////          fail("User not found.")
+////        case Bad(issues) =>
+////          fail(s"User lookup error: $issues")
+//      }
+
+//      val fget = store.get("a")
+//      whenReady(fget, timeout(tm)) { u =>
+//        u shouldBe Good(Some(user))
+//      }
+//
+//      val fdel = store.delete("a")
+//      whenReady(fdel, timeout(tm)) { u =>
+//        u shouldBe Good(Some(user))
+//      }
+//
+//      val fget2 = store.get("a")
+//      whenReady(fget2, timeout(tm)) { u =>
+//        u shouldBe Good(None)
+//      }
 
 
     }

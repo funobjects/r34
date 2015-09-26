@@ -16,7 +16,9 @@
 
 package org.funobjects.r34
 
-import akka.actor.{ActorSystem, Props}
+import java.util.concurrent.atomic.AtomicReference
+
+import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.server.Route
 import akka.stream.FlowMaterializer
 
@@ -27,13 +29,18 @@ import scala.concurrent.ExecutionContext
  *
  * @author Robert Fries
  */
-trait ResourceModuleLike {
+//trait ResourceModuleLike {
+//  val name: String
+//  val props: Option[Props] = None
+//  val routes: Option[Route] = None
+//  val subscriptions: List[String] = Nil
+//}
+
+abstract class ResourceModule(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) {
   val name: String
   val props: Option[Props] = None
   val routes: Option[Route] = None
-  val subsriptions: List[String] = Nil
-}
+  val subscriptions: List[String] = Nil
 
-abstract class ResourceModule(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModuleLike {
-  def start() = props.foreach(sys.actorOf(_, name))
+  def start(): Option[ActorRef] = props map { p => sys.actorOf(p, name) }
 }

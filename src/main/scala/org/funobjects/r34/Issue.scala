@@ -34,8 +34,7 @@ case class Issue(
 
 object Issue {
   def apply(msg: String): Issue = Issue(msg, Array(), None, None)
+  def apply(msg: String, ex: Exception): Issue = Issue(msg, Array(), Some(ex), None)
   def apply(msg: String, o: Any): Issue = Issue(msg, Array(o), None, None)
   implicit def issueToOneIssue(issue: Issue): One[Issue] = One(issue)
 }
-
-

@@ -16,21 +16,39 @@
 
 package org.funobjects.r34
 
-import org.scalactic.{Every, Or}
+import org.scalactic.{Bad, Every, Or}
 
 import scala.concurrent.{Await, Future}
+import scala.util.{Failure, Success, Try}
+import scala.util.control.NonFatal
 
 /**
  * A repository that supports updates and removal of entries.
  */
 trait Store[K, V] extends Repository[K, V] {
-  def put(key: K, value: V): Future[Option[V] Or Every[Issue]]
+  def create(key: K, value: V): Future[Option[V] Or Every[Issue]] = update(key, value, create = false)
+  
+  def update(key: K, value: V, create: Boolean = false): Future[Option[V] Or Every[Issue]]
 
-  def remove(key: K): Future[Option[V] Or Every[Issue]]
+  def checkAndUpdate(key: K, value: V, expected: V): Future[Option[V] Or Every[Issue]]
 
-  def putSync(key: K, value: V): Option[V] Or Every[Issue] =
-    Await.result(put(key, value), syncTimeout)
+  def delete(key: K): Future[Option[V] Or Every[Issue]]
 
-  def removeSync(key: K): Option[V] Or Every[Issue] =
-    Await.result(remove(key), syncTimeout)
+  def updateSync(key: K, value: V, create: Boolean): Option[V] Or Every[Issue] =
+    Try(Await.result(update(key, value, create), syncTimeout)) match {
+      case Success(result) => result
+      case Failure(NonFatal(ex)) => Bad(Issue("Error during update: ", ex))
+    }
+
+  def checkAndUpdateSync(key: K, value: V, expected: V): Option[V] Or Every[Issue] =
+    Try(Await.result(checkAndUpdate(key, value, expected), syncTimeout)) match {
+      case Success(result) => result
+      case Failure(NonFatal(ex)) => Bad(Issue("Error during checkAndUpdate: ", ex))
+    }
+
+  def deleteSync(key: K): Option[V] Or Every[Issue] =
+    Try (Await.result(delete(key), syncTimeout)) match {
+      case Success(result) => result
+      case Failure(NonFatal(ex)) => Bad(Issue("Error during delete: ", ex))
+    }
 }

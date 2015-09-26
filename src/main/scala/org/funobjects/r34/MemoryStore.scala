@@ -30,9 +30,11 @@ class MemoryStore[K, V](implicit val exec: ExecutionContext) extends Store[K, V]
     Future.successful(Good(map.get(key)))
   }
 
-  override def put(key: K, value: V): Future[Option[V] Or Every[Issue]] =
+  override def update(key: K, value: V, create: Boolean): Future[Option[V] Or Every[Issue]] =
     Future.successful(Good(map.put(key, value)))
 
-  override def remove(key: K): Future[Option[V] Or Every[Issue]] =
+  override def delete(key: K): Future[Option[V] Or Every[Issue]] =
     Future.successful(Good(map.remove(key)))
+
+  override def checkAndUpdate(key: K, value: V, expected: V): Future[Or[Option[V], Every[Issue]]] = ???
 }

@@ -24,6 +24,7 @@ import akka.http.scaladsl.server._
 import org.funobjects.r34.Repository
 
 import org.funobjects.r34.auth._
+import org.funobjects.r34.modules.TokenModule.TokenEntry
 import org.scalactic.Good
 
 /**

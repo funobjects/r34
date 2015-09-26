@@ -18,9 +18,9 @@ package org.funobjects.r34.modules
 
 import akka.actor._
 import akka.pattern.ask
-import akka.persistence.{SnapshotOffer, PersistentActor}
+import akka.persistence.{SnapshotSelectionCriteria, SnapshotOffer, PersistentActor}
 import akka.stream.FlowMaterializer
-import org.funobjects.r34.{Store, Repository, Issue, ResourceModule}
+import org.funobjects.r34._
 import org.scalactic.{Bad, Good, Every, Or}
 
 import scala.collection.SortedSet
@@ -64,12 +64,12 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
   /**
    * Determines if an entity has been deleted.
    */
-  def isDeleted(entity: ENTITY): Boolean
+  def isDeleted(entity: ENTITY)(implicit del: Deletable[ENTITY]): Boolean = del.isDeleted(entity)
 
   /**
    * Returns a copy of the entity which has been marked for deletion.
    */
-  def deleted(entity: ENTITY): ENTITY
+  def delete(entity: ENTITY)(implicit del: Deletable[ENTITY]): ENTITY = del.delete(entity)
 
   override val name = s"store:$resType"
   override val props = Some(Props(classOf[StorageMasterActor], this))
@@ -97,7 +97,7 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
   case class CreateEntityResponse(id: String, result: PossibleEntity) extends EntityCommandResponse
 
   case class UpdateEntity(id: String, value: ENTITY, create: Boolean = true) extends EntityCommand
-  case class CheckAndUpdateEntity(id: String, expectedValue: ENTITY, newValue: ENTITY) extends EntityCommand
+  case class CheckAndUpdateEntity(id: String, newValue: ENTITY, expectedValue: ENTITY) extends EntityCommand
   case class UpdateEntityResponse(id: String, result: PossibleEntity) extends EntityCommandResponse
 
   case class DeleteEntity(id: String) extends EntityCommand
@@ -116,66 +116,73 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
     // Regex used to extract an id from a StorageEntityActor path
     val userKeyRegex = s""".*/user/store:$resType/([^/]+)""".r
 
-    override def receiveCommand: Receive = {
-      case cmd: EntityCommand =>  entityCommand(cmd)
-        log.debug(s"*** EntityCommand: $cmd")
+
+    override def receiveCommand: Receive =
+    {
+      case cmd: EntityCommand =>
+        println(s"*** EntityCommand: $cmd")
+        entityCommand(cmd)
 
       case event @ IndexEntryCreated(id)  if !(keys contains id)  => persist(event) { keys += _.id }
-        log.debug(s"*** IndexEntityAdded: $id")
+        println(s"*** IndexEntityAdded: $id")
 
       case event @ IndexEntryRemoved(id)  if keys contains id     => persist(event) { keys -= _.id }
-        log.debug(s"*** IndexEntityRemoved: $id")
+        println(s"*** IndexEntityRemoved: $id")
 
       case Terminated(ref) => removeRef(ref)
-        log.debug(s"*** Terminated: $ref")
+        println(s"*** Terminated: $ref")
 
       case ModuleShutdown => refMap.values.foreach(_ ! ModuleShutdown)
-      case ModuleSnapshot => saveSnapshot(keys)
-      case _ =>
-    }
 
-    override def preStart(): Unit = {
-      println("StorageMaster: " + self.path)
-      super.preStart()
+      case ModuleSnapshot => saveSnapshot(keys)
+
+      case ModuleDeleteAll =>
+        for (key <- keys;
+             ref <- refMap get key) {
+          ref ! ModuleDeletePermanent(key)
+        }
+
+      case a: Any => println(s"**** Received unexpected msg: ${a.getClass.getName}")
     }
 
     def entityCommand(cmd: EntityCommand): Unit = {
+      println("*** Received entity command...")
       val idExists = keys.contains(cmd.id)
       cmd match {
 
-        case GetEntity(id) => idExists match {
+        case GetEntity(id) =>
+          println(s"*** GetEntity $id")
+          idExists match {
             case true  => refMap getOrElse(id, newRef(id)) forward cmd
             case false => sender() ! GetEntityResponse(id, Good(None))
           }
-          log.debug(s"*** GetEntity $id")
 
         case CreateEntity(id, entity) => idExists match {
             case true  => sender ! CreateEntityResponse(id, Bad(Issue("Entity exists.")))
             case false => persistIndexEvent(IndexEntryCreated(id), id, cmd)
           }
-          log.debug(s"***g CreateEntity $id")
+          println(s"*** CreateEntity $id")
 
         case UpdateEntity(id, _, create) => idExists match {
             case true  => refMap getOrElse(id, newRef(id)) forward cmd
             case false if !create => sender ! UpdateEntityResponse(id, Bad(Issue("Entity does not exist, and create flag was false.")))
             case false if create  => persistIndexEvent(IndexEntryCreated(id), id, cmd)
           }
-          log.debug(s"*** UpdateEntity $id")
+          println(s"*** UpdateEntity $id")
 
         case CheckAndUpdateEntity(id, _, _) => idExists match {
             case true  => refMap getOrElse(id, newRef(id)) forward cmd
             case false => sender ! UpdateEntityResponse(id, Bad(Issue("Entity does not exist.")))
           }
-          log.debug(s"*** CheckAndUpdateEntity $id")
+          println(s"*** CheckAndUpdateEntity $id")
 
         case DeleteEntity(id) => idExists match {
             case true  => persistIndexEvent(IndexEntryRemoved(id), id, cmd)
             case false => sender ! DeleteEntityResponse(id, Good(None))
           }
-          log.debug(s"*** DeleteEntity $id")
+          println(s"*** DeleteEntity $id")
       }
     }
-
 
     def persistIndexEvent(ev: IndexEvent, id: String, cmd: EntityCommand): Unit =
       persist(ev) { ev =>
@@ -184,6 +191,7 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
       }
 
     def newRef(key: String): ActorRef = {
+      println(s"*** creating entity actor for: $key")
       val ref = context.actorOf(entityProps(key), key)
       refMap += (key -> ref)
       ref
@@ -194,7 +202,7 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
       // the actor path of the terminated actor
       ref.path.toString match {
         case userKeyRegex(id , _*) => refMap -= id
-          log.debug(s"*** removed ref for $id")
+          println(s"*** removed ref for $id")
       }
     }
 
@@ -227,7 +235,7 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
 
       case UpdateEntity(id, updated, _) => persistAndFold(id, EntityUpdated(id, updated))
 
-      case CheckAndUpdateEntity(id, expected, updated) =>
+      case CheckAndUpdateEntity(id, updated, expected) =>
         if (entity.contains(expected))
           persistAndFold(id, EntityUpdated(id, entity))
         else
@@ -241,11 +249,15 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
 
       case SnapshotOffer(_, snapshot) => snapshot match { case ent: ENTITY => entity = Some(ent) }
 
-      case _ =>
+      case ModuleDeletePermanent(id) =>
+        deleteMessages(Long.MaxValue, permanent = true)
+        deleteSnapshots(SnapshotSelectionCriteria(Long.MaxValue, Long.MaxValue))
+
+      case _ => println("*** Received unexpected msg...")
     }
 
     def persistAndFold(id: String, event: EntityEvent): Unit = {
-      println(s"Persising event for $id: $event")
+      println(s"Persisting event for $id: $event")
       persist(event) { ev =>
         val before = entity
         // note that the entity may be deleted, but this update acts like
@@ -284,20 +296,30 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
     Try(Await.result(sys.actorSelection(masterActorPath).resolveOne(timeout), timeout*2)) match {
       // found the ref
       case Success(ref) => Some(
-          new Store[String, ENTITY] {
-            override def put(key: String, value: ENTITY): FuturePossibleEntity = {
+        new Store[String, ENTITY] {
+            override def update(key: String, value: ENTITY, create: Boolean): FuturePossibleEntity = {
+              println("** Store: update")
               ref.ask(UpdateEntity(key, value))(timeout).mapTo[UpdateEntityResponse] map {
                 case UpdateEntityResponse(id, possible) => possible
               }
             }
 
-            override def remove(key: String): FuturePossibleEntity ={
+            override def checkAndUpdate(key: String, value: ENTITY, expected: ENTITY): FuturePossibleEntity = {
+              println("** Store: checkAndUpdate")
+              ref.ask(CheckAndUpdateEntity(key, value, expected))(timeout).mapTo[UpdateEntityResponse] map {
+                case UpdateEntityResponse(id, possible) => possible
+              }
+            }
+
+            override def delete(key: String): FuturePossibleEntity ={
+              println("** Store: delete")
               ref.ask(DeleteEntity(key))(timeout).mapTo[DeleteEntityResponse] map {
                 case DeleteEntityResponse(id, possible) => possible
               }
             }
 
             override def get(key: String): FuturePossibleEntity = {
+              println("** Store: get, sending GetEntity")
               ref.ask(GetEntity(key))(timeout).mapTo[GetEntityResponse] map {
                 case GetEntityResponse(id, possible) => possible
               }
@@ -306,6 +328,7 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
         )
       // TODO: Issue mapping
       case Failure(ex) =>
+        println("Failed to find ref for master...")
         println(ex)
         None
     }
@@ -326,4 +349,6 @@ object StorageModule {
 
   case object ModuleShutdown
   case object ModuleSnapshot
+  case object ModuleDeleteAll
+  case class ModuleDeletePermanent(id: String)
 }

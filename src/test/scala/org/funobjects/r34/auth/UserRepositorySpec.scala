@@ -60,8 +60,8 @@ object UserRepositorySpec {
     implicit val exec: ExecutionContext = ExecutionContexts.global()
 
     val repo = new SimpleUserStore()
-    val fa = repo.put(userA.name, userA)
-    val fb = repo.put(userB.name, userB)
+    val fa = repo.update(userA.name, userA)
+    val fb = repo.update(userB.name, userB)
     whenReady (fa) { or => or.isGood shouldBe true }
     whenReady (fb) { or => or.isGood shouldBe true }
     repo
@@ -73,8 +73,8 @@ object UserRepositorySpec {
     implicit val exec: ExecutionContext = ExecutionContexts.global()
 
     val repo1 = new SimpleUserStore()
-    val fa = repo1.put(userA.name, userA)
-    val fb = repo1.put(userB.name, userB)
+    val fa = repo1.update(userA.name, userA)
+    val fb = repo1.update(userB.name, userB)
     whenReady (fa) { or => or.isGood shouldBe true }
     whenReady (fb) { or => or.isGood shouldBe true }
 

@@ -19,7 +19,7 @@ package org.funobjects.r34.modules
 import akka.actor.{Props, Actor, ActorLogging, ActorSystem}
 import akka.persistence.PersistentActor
 import akka.stream.FlowMaterializer
-import org.funobjects.r34.{Repository, ResourceModule}
+import org.funobjects.r34.{Deletable, Repository, ResourceModule}
 import org.funobjects.r34.auth.SimpleUser
 
 import scala.concurrent.ExecutionContext
@@ -35,10 +35,10 @@ class LocalUsers()(implicit sys: ActorSystem, exec: ExecutionContext, flows: Flo
   //override def repository: Repository[String, SimpleUser] = ???
 
 
-  override def isDeleted(entity: SimpleUser): Boolean = entity.isDeleted
+  override def isDeleted(entity: SimpleUser)(implicit del: Deletable[SimpleUser]): Boolean = entity.isDeleted
 
   /**
    * Returns a copy of the entity which has been marked for deletion.
    */
-  override def deleted(entity: SimpleUser): SimpleUser = entity.copy(isDeleted = true)
+  override def delete(entity: SimpleUser)(implicit del: Deletable[SimpleUser]): SimpleUser = entity.copy(isDeleted = true)
 }
