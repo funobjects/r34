@@ -19,9 +19,10 @@ package org.funobjects.r34.modules
 import akka.actor.{ActorRef, ActorSystem}
 import akka.stream.{FlowMaterializer, ActorFlowMaterializer}
 import com.typesafe.config.{ConfigFactory, Config}
+import org.funobjects.r34.Issue
 import org.funobjects.r34.auth.SimpleUser
 import org.funobjects.r34.modules.StorageModule.ModuleDeleteAll
-import org.scalactic.{Bad, Good}
+import org.scalactic.{Or, One, Bad, Good}
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 import org.scalatest.concurrent.ScalaFutures._
@@ -61,30 +62,35 @@ class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       val store = maybeStore.get
 
-      val fget = store.get("a")
-      fget.futureValue shouldBe Good(None)
+      {
+        val fget = store.get("a")
+        fget.futureValue shouldBe Good(None)
+      }
 
-      val fput = store.update("a", user)
-      fput.futureValue shouldBe Good(None)
+      {
+        val fput = store.update("a", user)
+        fput.futureValue shouldBe Good(None)
+      }
 
-      ref.get ! ModuleDeleteAll
+      {
+        val fget = store.get("a")
+        fget.futureValue shouldBe Good(Some(user))
+      }
 
+      {
+        val fget = store.delete("a")
+        fget.futureValue shouldBe Good(Some(user))
+      }
 
-//      whenReady(fput, timeout(tm)) { u =>
-//        u shouldBe Good(None)
-////        case Good(Some(user)) =>
-////          user shouldBe SimpleUser("a", "ap")
-////        case Good(None) =>
-////          fail("User not found.")
-////        case Bad(issues) =>
-////          fail(s"User lookup error: $issues")
-//      }
+      {
+        val fget = store.delete("a")
+        val o = fget.futureValue
+        o match {
+          case Bad(issues) => println(s"** issues: $issues")
+          case _ => fail("Unexpected value for failed delete")
+        }
+      }
 
-//      val fget = store.get("a")
-//      whenReady(fget, timeout(tm)) { u =>
-//        u shouldBe Good(Some(user))
-//      }
-//
 //      val fdel = store.delete("a")
 //      whenReady(fdel, timeout(tm)) { u =>
 //        u shouldBe Good(Some(user))
@@ -94,6 +100,8 @@ class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 //      whenReady(fget2, timeout(tm)) { u =>
 //        u shouldBe Good(None)
 //      }
+
+      ref.get ! ModuleDeleteAll
 
 
     }

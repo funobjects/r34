@@ -22,13 +22,23 @@ class Aggregation(id: String, modules: List[ResourceModule])(implicit val sys: A
 
   override val name = "root"
   override val routes = Some(aggregateRoutes)
-  override val props = Some(Props[Aggregation.AggregatingActor])
+  override val props = Some(Aggregation.props(modules))
 
   val moduleMap = modules.map(mod => (mod.name, mod)).toMap
 
   lazy val aggregateRoutes: Route = {
-    path(Segment) { resName =>
-      moduleMap.get(resName).flatMap(_.routes).getOrElse(reject)
+
+    modules.flatMap {
+      // not all modules have routes (route is actually an Option[Route]), but we need the module name
+      // for the prefix, so map it into the option so it can be flatMapped over
+
+      mod => mod.routes map { rt => (mod.name, rt) }
+    } map {
+      // prefix each module route with the module name
+      case (nm, route) => pathPrefix(nm) { route }
+    } reduceLeft {
+      // combine the aggregate routes with ~
+      (route1, route2) => route1 ~ route2
     }
   }
 }

@@ -178,7 +178,7 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
 
         case DeleteEntity(id) => idExists match {
             case true  => persistIndexEvent(IndexEntryRemoved(id), id, cmd)
-            case false => sender ! DeleteEntityResponse(id, Good(None))
+            case false => sender ! DeleteEntityResponse(id, Bad(Issue("Entity not found.")))
           }
           println(s"*** DeleteEntity $id")
       }

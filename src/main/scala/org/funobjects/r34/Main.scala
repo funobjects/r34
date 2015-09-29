@@ -19,33 +19,16 @@ package org.funobjects.r34
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.model._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorFlowMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
-import org.funobjects.r34.auth
 
-import org.funobjects.r34.directives.R34Directives.oauth2
-import org.funobjects.r34.modules.{TokenModule, Aggregation, LocalAdmin, ConfigModule}
-
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
-import org.json4s.jackson.Serialization.{write, writePretty}
-
+import org.funobjects.r34.modules._
 import org.funobjects.r34.auth._
-import org.scalactic.{Bad, Good}
 
-import scala.concurrent.{Future, ExecutionContext}
-import scala.concurrent.duration._
-import scala.util.Try
-import scala.util.control.NonFatal
-
-case class Outer(a: String, b: Option[String], inner: Inner, maybe: Option[Inner] )
-case class Inner(n: Int, m: Option[Int])
+import scala.concurrent.ExecutionContext
 
 trait Server {
-//  implicit val userRepository: Repository[String, SimpleUser]
-//  implicit val tokenRepository: Store[BearerToken, xTokenEntry[SimpleUser]]
   implicit val sys: ActorSystem
   implicit val flows: ActorFlowMaterializer
   implicit val exec: ExecutionContext
@@ -53,93 +36,19 @@ trait Server {
   // default json4s extractors
   implicit val formats = org.json4s.DefaultFormats
 
-  val debugResources = new DebugResources()
+  val instanceId = Option(System.getProperty("r34.id")).getOrElse("local")
+
+  val configModule = new ConfigModule(instanceId)
+  val debugModule = new DebugResources()
+  val adminModule = new LocalAdmin()
+  val userModule = new LocalUsers()
+  val tokenModule = new TokenModule[SimpleUser]()
+  val all = new Aggregation(instanceId, List(configModule, adminModule, userModule, tokenModule, debugModule))
 
   val noRoute: Route = { reject }
-
-  def router = {
-    logRequestResult("r34") {
-      path("shutdown") {
-        complete {
-          sys.scheduler.scheduleOnce(1.second) { sys.shutdown() }
-          HttpResponse(StatusCodes.OK)
-        }
-      } ~
-      (get & path("getuser")) {
-        complete {
-          HttpResponse(StatusCodes.OK, entity = writePretty(SimpleUser("a", "b")))
-        }
-      } ~
-//      (get & path("tauth")) {
-//        oauth2(tokenRepository) { user =>
-//          println(s"*** user: $user")
-//          complete {
-//            HttpResponse(StatusCodes.OK)
-//          }
-//        }
-//      } ~
-      (post & path("outer") & extract(_.request.entity)) { entity =>
-        complete {
-          entity.toStrict(1.second) map { strict =>
-            Try {
-              val outer = parse(strict.data.utf8String).extract[Outer]
-              println(outer)
-              HttpResponse(StatusCodes.OK)
-            } recover {
-              case NonFatal(ex) => HttpResponse(StatusCodes.InternalServerError, entity = s"Non-optimal execution: $ex\n")
-            }
-          }
-        }
-      } ~
-//      (get & path("user" / Segment)) { userId =>
-//        // TODO: how to enforce size limits on URL and segment ??
-//        oauth2(tokenRepository) { identifiedUser =>
-//          complete {
-//            userRepository.get(userId) map {
-//              case Good(Some(user)) => HttpResponse(StatusCodes.OK, entity = HttpEntity(write(user)))
-//              case Good(None)       => HttpResponse(StatusCodes.NotFound)
-//              case Bad(issues)      => HttpResponse(StatusCodes.BadRequest)
-//            } recover {
-//              case NonFatal(ex)     => HttpResponse(StatusCodes.InternalServerError)
-//            }
-//          }
-//        }
-//      } ~
-      path("form") {
-        formFields('a, "b", "c".?) { (a, b, c) =>
-          complete {
-            println(s"form: $a $b $c")
-            HttpResponse(StatusCodes.OK)
-          }
-        }
-      } ~
-      (post & path("intake")) {
-        extractRequest {
-          case HttpRequest(HttpMethods.POST, _, _, entity, _) =>
-            complete {
-              entity match {
-                case entity @ HttpEntity.Chunked(ctype, src) =>
-                  src.runForeach(chunk => println(s"CHUNK: + ${chunk.data().toString()}"))
-                //src.runForeach { chunk => println(s"CHUNK: + ${chunk.data.toString}")}.map { () =>  }
-                //                .onComplete {
-                //                case Success(_) => HttpResponse(StatusCodes.OK)
-                //                case Failure(_) => HttpResponse(StatusCodes.InternalServerError)
-                case _ =>
-              }
-              HttpResponse(StatusCodes.OK)
-            }
-            case _ => complete(Future.successful(HttpResponse(StatusCodes.BadRequest)))
-          }
-      } ~
-      //auth.TokenRequest.routes ~
-      debugResources.routes.getOrElse(noRoute)
-    }
-  }
 }
 
 object Main extends App with Server {
-
-  val instanceId = Option(System.getProperty("r34.id")).getOrElse("anonymous")
 
   // TODO: set up real config
   val akkaConfig: Config = ConfigFactory.parseString("""
@@ -153,14 +62,12 @@ object Main extends App with Server {
   override implicit val flows = ActorFlowMaterializer()
   override implicit val exec = sys.dispatcher
 
-  val configModule = new ConfigModule(instanceId)
-  val adminModule = new LocalAdmin()
-  val tokenModule = new TokenModule[SimpleUser]()
-  val all = new Aggregation(instanceId, List(configModule, adminModule, tokenModule))
 
-  val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).runForeach { connection =>
-    println(s"connect =>")
-    connection.handleWith(router)
+  all.routes foreach { routes =>
+    val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).runForeach { connection =>
+      println(s"connect => ${connection.remoteAddress}")
+      connection.handleWith(routes)
+    }
   }
 }
 
