@@ -17,7 +17,7 @@
 package org.funobjects.r34
 
 import akka.actor.ActorSystem
-import akka.stream.ActorFlowMaterializer
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl._
 import org.funobjects.r34.auth.{Identified, SimpleUserStore, SimpleUser}
 import org.scalactic.{Good, Bad, Or, Every}
@@ -25,7 +25,7 @@ import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 
 import scala.concurrent.duration._
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import scala.util.{Try, Failure, Success}
 
 /**
@@ -35,7 +35,7 @@ class FlowStuffSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
 
   implicit val sys: ActorSystem = ActorSystem("sys")
   implicit val exec = scala.concurrent.ExecutionContext.Implicits.global
-  implicit val flows: ActorFlowMaterializer = ActorFlowMaterializer()
+  implicit val mat = ActorMaterializer()
 
   "Flows" should {
     "work concurrently" in {
@@ -52,10 +52,10 @@ class FlowStuffSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
         }
       }
 
-      def flowUserGet(name: String): RunnableFlow[Future[Option[SimpleUser] Or Every[Issue]]]
+      def flowUserGet(name: String): RunnableGraph[Future[Option[SimpleUser] Or Every[Issue]]]
         = Source(userRepository.get(name)).toMat(Sink.head)(Keep.right)
 
-      def flowUserRemove(name: String): RunnableFlow[Future[Option[SimpleUser] Or Every[Issue]]]
+      def flowUserRemove(name: String): RunnableGraph[Future[Option[SimpleUser] Or Every[Issue]]]
         = Source(userRepository.delete(name)).toMat(Sink.head)(Keep.right)
 
       def completeUserOption(results: Try[Option[SimpleUser] Or Every[Issue]]) = results match {
@@ -74,8 +74,7 @@ class FlowStuffSpec extends WordSpec with Matchers with BeforeAndAfterAll with E
   }
 
   override protected def afterAll(): Unit = {
-    sys.shutdown()
-    sys.awaitTermination()
+    Await.result(sys.terminate(), 5.seconds)
     super.afterAll()
   }
 }

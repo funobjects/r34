@@ -18,7 +18,7 @@ package org.funobjects.r34
 
 import akka.actor.Actor.Receive
 import akka.actor.{Props, Actor, ActorRef, ActorSystem}
-import akka.stream.{FlowMaterializer, ActorFlowMaterializer}
+import akka.stream.ActorMaterializer
 import akka.testkit._
 import org.funobjects.r34.auth._
 import org.funobjects.r34.modules.StorageModule
@@ -27,6 +27,9 @@ import org.funobjects.r34.modules.TokenModule.TokenEntry
 import org.scalactic.Good
 
 import org.scalatest.{WordSpecLike, BeforeAndAfterAll, Matchers}
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 /**
  *
@@ -37,7 +40,7 @@ class RepositorySpec(sys: ActorSystem) extends TestKit(sys) with WordSpecLike wi
   def this() = this(ActorSystem("testActorSystem"))
 
   override protected def afterAll(): Unit = {
-    sys.shutdown()
+    Await.result(sys.terminate, 5.seconds)
   }
 
   lazy implicit val exec = sys.dispatcher
@@ -67,7 +70,7 @@ class RepositorySpec(sys: ActorSystem) extends TestKit(sys) with WordSpecLike wi
 
   "StoreModule actor" should {
     "be able to be instantiated" in {
-      implicit val flow = ActorFlowMaterializer()
+      implicit val flow = ActorMaterializer()
 
       val mod = new StorageModule[Int]("mod") {
 

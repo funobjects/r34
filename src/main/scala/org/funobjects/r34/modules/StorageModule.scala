@@ -19,7 +19,7 @@ package org.funobjects.r34.modules
 import akka.actor._
 import akka.pattern.ask
 import akka.persistence.{SnapshotSelectionCriteria, SnapshotOffer, PersistentActor}
-import akka.stream.FlowMaterializer
+import akka.stream.ActorMaterializer
 import org.funobjects.r34._
 import org.scalactic.{Bad, Good, Every, Or}
 
@@ -32,7 +32,7 @@ import scala.util.{Try, Failure, Success}
 /**
  * Base class for event-sourced entity resource modules.
  */
-abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule()(sys, exec, flows) {
+abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSystem, exec: ExecutionContext, flows: ActorMaterializer) extends ResourceModule()(sys, exec, flows) {
 
   import StorageModule._
 
@@ -51,10 +51,11 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
   def foldEvent[EV <: EntityEvent](ev: EV, entity: Option[ENTITY]): Option[ENTITY] = ev match {
       case EntityUpdated(id, any) =>
         println(s"*** Fold: setting value of $id to $any")
-        any match {
-          // TODO: this is effectively a cast, since we can't check against ENTITY due to type erasure
-          case ent: ENTITY => Some(ent)
-        }
+//        any match {
+//          case ent: ENTITY => Some(ent)
+//        }
+        // we can't check against ENTITY due to type erasure
+        Some(any.asInstanceOf[ENTITY])
       case EntityRemoved(id) =>
         println(s"*** Fold: removing value for $id")
         None
@@ -247,10 +248,10 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
         sender ! DeleteEntityResponse(id, Good(before))
       }
 
-      case SnapshotOffer(_, snapshot) => snapshot match { case ent: ENTITY => entity = Some(ent) }
+      case SnapshotOffer(_, snapshot) => entity = Some(snapshot.asInstanceOf[ENTITY])
 
       case ModuleDeletePermanent(id) =>
-        deleteMessages(Long.MaxValue, permanent = true)
+        deleteMessages(Long.MaxValue)
         deleteSnapshots(SnapshotSelectionCriteria(Long.MaxValue, Long.MaxValue))
 
       case _ => println("*** Received unexpected msg...")

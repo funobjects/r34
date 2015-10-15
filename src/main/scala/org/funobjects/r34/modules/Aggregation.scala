@@ -16,25 +16,20 @@
 
 package org.funobjects.r34.modules
 
-import akka.actor.Actor.Receive
 import akka.actor._
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.persistence.PersistentActor
-import akka.stream.FlowMaterializer
-import com.typesafe.config.Config
+import akka.stream.ActorMaterializer
 import org.funobjects.r34.ResourceModule
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration._
 
 /**
  * Aggregate module container.
  *
  * @author Robert Fries
  */
-class Aggregation(id: String, modules: List[ResourceModule])(implicit val sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule()(sys, exec, flows) {
+class Aggregation(id: String, modules: List[ResourceModule])(implicit val sys: ActorSystem, exec: ExecutionContext, flows: ActorMaterializer) extends ResourceModule()(sys, exec, flows) {
 
   override val name = "root"
   override val routes = Some(aggregateRoutes)

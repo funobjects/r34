@@ -20,7 +20,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpEntity, ContentTypes, StatusCodes, HttpResponse}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.FlowMaterializer
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Source}
 import org.funobjects.r34.ResourceModule
 
@@ -30,7 +30,7 @@ import scala.concurrent.duration._
 /**
  * Created by rgf on 5/29/15.
  */
-class LocalAdmin(implicit val sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule {
+class LocalAdmin(implicit val sys: ActorSystem, exec: ExecutionContext, flows: ActorMaterializer) extends ResourceModule {
   override val name: String = "admin"
   override val routes: Option[Route] = Some {
     path("hi") {

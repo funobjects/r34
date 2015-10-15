@@ -20,7 +20,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{StatusCodes, HttpResponse}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.ActorFlowMaterializer
+import akka.stream.ActorMaterializer
 import org.funobjects.r34.auth._
 import org.funobjects.r34.modules.TokenModule.TokenEntry
 import org.funobjects.r34.{Store, Repository, ResourceModule}
@@ -34,8 +34,8 @@ import scala.util.control.NonFatal
  * Created by rgf on 6/10/15.
  */
 class OAuth2Module(implicit sys: ActorSystem,
-  flows: ActorFlowMaterializer,
   executionContext: ExecutionContext,
+  mat: ActorMaterializer,
   userRepository: Repository[String, SimpleUser],
   tokenRepository: Store[BearerToken, TokenEntry[SimpleUser]]) extends ResourceModule {
 

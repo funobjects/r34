@@ -16,10 +16,9 @@
 
 package org.funobjects.r34.modules
 
-import akka.actor.{Props, Actor, ActorLogging, ActorSystem}
-import akka.persistence.PersistentActor
-import akka.stream.FlowMaterializer
-import org.funobjects.r34.{Deletable, Repository, ResourceModule}
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import org.funobjects.r34.Deletable
 import org.funobjects.r34.auth.SimpleUser
 
 import scala.concurrent.ExecutionContext
@@ -27,13 +26,10 @@ import scala.concurrent.ExecutionContext
 /**
  * Local user DB
  */
-class LocalUsers()(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer)
-  extends StorageModule[SimpleUser]("user")(sys, exec, flows) {
+class LocalUsers()(implicit sys: ActorSystem, exec: ExecutionContext, mat: ActorMaterializer)
+  extends StorageModule[SimpleUser]("user")(sys, exec, mat) {
 
   override val routes = None
-
-  //override def repository: Repository[String, SimpleUser] = ???
-
 
   override def isDeleted(entity: SimpleUser)(implicit del: Deletable[SimpleUser]): Boolean = entity.isDeleted
 

@@ -20,12 +20,18 @@ import java.util.concurrent.atomic.AtomicReference
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.server.Route
-import akka.stream.FlowMaterializer
+import akka.stream.ActorMaterializer
 
 import scala.concurrent.ExecutionContext
 
 /**
  * Summary information about a resource module.
+ *
+ * Modules may define an actor, routes, and/or subscriptions to the event bus.
+ *
+ * Although modules are immutable, certain methods may have side-effects; for example,
+ * the start() method has the side-effect of creating (or attempting to create) an actor
+ * in the supplied actor system.
  *
  * @author Robert Fries
  */
@@ -36,11 +42,15 @@ import scala.concurrent.ExecutionContext
 //  val subscriptions: List[String] = Nil
 //}
 
-abstract class ResourceModule(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) {
+abstract class ResourceModule(implicit sys: ActorSystem, exec: ExecutionContext, mat: ActorMaterializer) {
   val name: String
   val props: Option[Props] = None
   val routes: Option[Route] = None
   val subscriptions: List[String] = Nil
 
+  /**
+   * Try to create the module actor, if defined, in associated actor system.
+   * @return
+   */
   def start(): Option[ActorRef] = props map { p => sys.actorOf(p, name) }
 }

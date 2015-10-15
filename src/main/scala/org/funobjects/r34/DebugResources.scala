@@ -20,7 +20,7 @@ import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes, HttpResponse}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.FlowMaterializer
+import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Source}
 
 import scala.concurrent.ExecutionContext
@@ -31,7 +31,7 @@ import scala.concurrent.duration._
  *
  * @author Robert Fries
  */
-class DebugResources(implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule()(sys, exec, flows) {
+class DebugResources(implicit sys: ActorSystem, exec: ExecutionContext, flows: ActorMaterializer) extends ResourceModule()(sys, exec, flows) {
   override val name: String = "debug"
 
   override val routes: Some[Route] = Some {

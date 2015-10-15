@@ -20,15 +20,16 @@ import akka.actor.ActorSystem
 import akka.testkit.TestKit
 import org.scalatest.{Matchers, WordSpecLike, BeforeAndAfterAll}
 
+import scala.concurrent.Await
+import scala.concurrent.duration._
+
 /**
  * Base mix-in for tests working with actors.
  */
-trait ActorSpec extends WordSpecLike with BeforeAndAfterAll with Matchers
+class ActorSpec(sys: ActorSystem) extends TestKit(sys) with WordSpecLike with BeforeAndAfterAll with Matchers
 {
-  self: TestKit =>
-
   override protected def afterAll(): Unit = {
-    system.shutdown()
+    Await.result(system.terminate(), 5.second)
     super.afterAll()
   }
 }

@@ -17,7 +17,7 @@
 package org.funobjects.r34.modules
 
 import akka.actor.ActorSystem
-import akka.stream.FlowMaterializer
+import akka.stream.ActorMaterializer
 import org.funobjects.r34.Deletable
 import org.funobjects.r34.auth.{Permits, BearerToken}
 import org.funobjects.r34.modules.TokenModule.TokenEntry
@@ -27,7 +27,7 @@ import scala.concurrent.ExecutionContext
 /**
  * Created by rgf on 6/10/15.
  */
-class TokenModule[U](implicit sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends StorageModule[TokenEntry[U]]("token")(sys, exec, flows) {
+class TokenModule[U](implicit sys: ActorSystem, exec: ExecutionContext, mat: ActorMaterializer) extends StorageModule[TokenEntry[U]]("token")(sys, exec, mat) {
 
   implicit def entryDeletable = new Deletable[TokenEntry[_]] {
     override def isDeleted(entry: TokenEntry[_]): Boolean = ???

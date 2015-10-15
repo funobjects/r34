@@ -20,7 +20,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
-import akka.stream.ActorFlowMaterializer
+import akka.stream.ActorMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
 
 import org.funobjects.r34.modules._
@@ -30,11 +30,8 @@ import scala.concurrent.ExecutionContext
 
 trait Server {
   implicit val sys: ActorSystem
-  implicit val flows: ActorFlowMaterializer
+  implicit val flows: ActorMaterializer
   implicit val exec: ExecutionContext
-
-  // default json4s extractors
-  implicit val formats = org.json4s.DefaultFormats
 
   val instanceId = Option(System.getProperty("r34.id")).getOrElse("local")
 
@@ -59,7 +56,7 @@ object Main extends App with Server {
       """)
 
   override implicit val sys = ActorSystem("r34", akkaConfig)
-  override implicit val flows = ActorFlowMaterializer()
+  override implicit val flows = ActorMaterializer()
   override implicit val exec = sys.dispatcher
 
 

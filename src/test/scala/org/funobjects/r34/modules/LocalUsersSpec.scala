@@ -17,9 +17,10 @@
 package org.funobjects.r34.modules
 
 import akka.actor.{ActorRef, ActorSystem}
-import akka.stream.{FlowMaterializer, ActorFlowMaterializer}
+import akka.stream.ActorMaterializer
+import akka.testkit.TestKit
 import com.typesafe.config.{ConfigFactory, Config}
-import org.funobjects.r34.Issue
+import org.funobjects.r34.{ActorSpec, Issue}
 import org.funobjects.r34.auth.SimpleUser
 import org.funobjects.r34.modules.StorageModule.ModuleDeleteAll
 import org.scalactic.{Or, One, Bad, Good}
@@ -28,6 +29,7 @@ import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 import org.scalatest.concurrent.ScalaFutures._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
 /**
@@ -43,7 +45,7 @@ class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
     """)
 
   implicit val sys = ActorSystem("test", akkaConfig)
-  implicit val flows: FlowMaterializer = ActorFlowMaterializer()
+  implicit val flows: ActorMaterializer = ActorMaterializer()
   implicit val exec: ExecutionContext = sys.dispatcher
 
   implicit val tm = Span(5, Seconds)
@@ -108,7 +110,6 @@ class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
   }
 
   override protected def afterAll(): Unit = {
-    sys.shutdown()
-    sys.awaitTermination()
+    Await.result(sys.terminate(),5.seconds)
   }
 }

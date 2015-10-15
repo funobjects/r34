@@ -16,23 +16,24 @@
 
 package org.funobjects.r34.modules
 
-import akka.actor.{Props, ActorSystem}
+import akka.actor._
 import akka.http.scaladsl.model.{StatusCodes, HttpResponse}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.server.Directives._
-import akka.persistence.PersistentActor
-import akka.stream.FlowMaterializer
+import akka.persistence.{RecoveryCompleted, PersistentActor}
+import akka.stream.ActorMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
 import org.funobjects.r34.ResourceModule
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success, Try}
 
 /**
  * Created by rgf on 5/28/15.
  */
-class ConfigModule(id: String)(implicit val sys: ActorSystem, exec: ExecutionContext, flows: FlowMaterializer) extends ResourceModule()(sys, exec, flows) {
-  override val name: String = "config"
+class ConfigModule(id: String)(implicit val sys: ActorSystem, exec: ExecutionContext, flows: ActorMaterializer) extends ResourceModule()(sys, exec, flows) {
+  override val name: String = ConfigModule.name
   override val props: Option[Props] = Some(Props(classOf[ConfigModule.ConfigActor], id))
   override val routes: Option[Route] = Some(configRoutes)
 
@@ -40,19 +41,25 @@ class ConfigModule(id: String)(implicit val sys: ActorSystem, exec: ExecutionCon
     path("shutdown") {
       complete {
         // TODO: perhaps some notification to the modules would be nice....
-        sys.scheduler.scheduleOnce(1.second) { sys.shutdown() }
+        sys.scheduler.scheduleOnce(1.second) { sys.terminate() }
         HttpResponse(StatusCodes.OK)
       }
     } ~
-    path("config" / Segment) {
+    path(Segment) {
       case "foo" => complete(HttpResponse(StatusCodes.OK, entity = "bar"))
       case "hi" => complete(HttpResponse(StatusCodes.OK, entity = "there"))
       case _ => complete(HttpResponse(StatusCodes.NotFound))
     }
   }
+
 }
 
 object ConfigModule {
+
+  def name = "config"
+
+  def primeProps(id: String) = Props(classOf[ConfigModule.PrimeActor], id)
+  def implProps(id: String) = Props(classOf[ConfigModule.ConfigActor], id)
 
   sealed trait ConfigCmd
 
@@ -69,30 +76,70 @@ object ConfigModule {
   case class ConfigUpdated(cfg: Config) extends ConfigEvent
   case class ConfigMerged(cfg: Config) extends ConfigEvent
 
+  /**
+   * Main module actor.
+   *
+   * Because various configuration or filesystem issues can cause the creation
+   * of a persistent actor to fail, it is best to avoid using a persistent actor
+   * as the main actor of a module. Right now, this actor only creates the persistent
+   * actor and relays messages, but this is where more sophisticated fall-back would
+   * exist for i/o related configuration failure.
+   *
+   * @param id
+   */
+  class PrimeActor(id: String) extends Actor with ActorLogging {
+
+    var cfgActor: Try[ActorRef] = _
+
+    override def preStart(): Unit = {
+      super.preStart()
+      cfgActor = Try { context.actorOf(implProps(id), "impl") }
+      cfgActor.failed.foreach(ex => log.error("Error starting persistent actor: "))
+    }
+
+    override def receive: Actor.Receive = {
+      case a: Any => cfgActor match {
+        case Success(ref) => ref forward a
+        case Failure(ex) => log.error("Configuration not available due to error starting persistent actor: " + ex)
+      }
+    }
+
+    override def postStop(): Unit = {
+      cfgActor foreach context.system.stop
+      super.postStop()
+    }
+  }
+
   class ConfigActor(id: String) extends PersistentActor {
 
     var cfg: Config = ConfigFactory.empty()
 
     override def persistenceId: String = "config:" + id
 
-    override def receiveCommand: Receive = logMsg("Command") andThen receivedCommand
-    override def receiveRecover: Receive = logMsg("Recover") andThen processEvent
+    override def receiveCommand: Receive = receivedCommand
+    override def receiveRecover: Receive = processEvent
 
     def receivedCommand: Receive = {
-      case GetConfig => sender ! cfg
-      case SetConfig(newCfg) => setConfig(newCfg)
-      case CheckAndSetConfig(newCfg, expectedCfg) => checkAndSetConfig(newCfg, expectedCfg)
-      case MergeConfig(newCfg) => mergeConfig(newCfg)
+      case GetConfig                                => sender ! ConfigResponse(cfg)
+      case SetConfig(newCfg)                        => setConfig(newCfg)
+      case MergeConfig(newCfg)                      => mergeConfig(newCfg)
+      case CheckAndSetConfig(newCfg, expectedCfg)   => checkAndSetConfig(newCfg, expectedCfg)
       case CheckAndMergeConfig(newCfg, expectedCfg) => checkAndMerge(newCfg, expectedCfg)
-      case _ =>
+      case cmd: Any                                 => println(s"unknown command: ${cmd.getClass.getName} $cmd")
     }
 
     def processEvent: Receive = {
-      case ConfigUpdated(newCfg) => cfg = newCfg
-      case ConfigMerged(newCfg) => cfg = newCfg.withFallback(cfg)
+      case ConfigUpdated(newCfg)  => cfg = newCfg
+      case ConfigMerged(newCfg)   => cfg = newCfg.withFallback(cfg)
+      case RecoveryCompleted      => println("recovery complete")
+      case ev: AnyRef             => println(s"unknown event: ${ev.getClass.getName} $ev")
     }
 
-    def setConfig(newCfg: Config): Unit = persist(ConfigUpdated(newCfg)) { event => processEvent(event) }
+    def setConfig(newCfg: Config): Unit = persist(ConfigUpdated(newCfg)) { event =>
+      val old = cfg
+      processEvent(event)
+      sender() ! ConfigResponse(old)
+    }
 
     def checkAndSetConfig(newCfg: Config, expectedCfg: Config): Unit = if (cfg == expectedCfg) setConfig(newCfg)
 
@@ -101,8 +148,7 @@ object ConfigModule {
     def checkAndMerge(newCfg: Config, expectedCfg: Config): Unit = if (cfg == expectedCfg) mergeConfig(newCfg)
 
     def logMsg(msg: String): Receive = {
-      case a: Any => println("$msg: Received command")
+      case a: AnyRef => println(s"$msg: got ${a.getClass.getName}")
     }
   }
-
 }
