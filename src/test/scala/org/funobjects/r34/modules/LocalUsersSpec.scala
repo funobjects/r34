@@ -16,40 +16,20 @@
 
 package org.funobjects.r34.modules
 
-import akka.actor.{ActorRef, ActorSystem}
-import akka.stream.ActorMaterializer
-import akka.testkit.TestKit
-import com.typesafe.config.{ConfigFactory, Config}
-import org.funobjects.r34.{ActorSpec, Issue}
+import org.funobjects.r34.{Issue, ActorSpec}
 import org.funobjects.r34.auth.SimpleUser
 import org.funobjects.r34.modules.StorageModule.ModuleDeleteAll
-import org.scalactic.{Or, One, Bad, Good}
+import org.scalactic.{Every, One, Bad, Good}
 import org.scalatest.time.{Seconds, Span}
-import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpec}
 import org.scalatest.concurrent.ScalaFutures._
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Await
-import scala.concurrent.duration._
-
 /**
- * Created by rgf on 6/1/15.
+ * Tests for the LocalUsers module.
  */
-class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
-
-  val akkaConfig: Config = ConfigFactory.parseString("""
-      akka.loglevel = WARNING
-      akka.log-dead-letters = off
-      akka.persistence.journal.plugin = funobjects-akka-orientdb-journal
-      prime.id = α
-    """)
-
-  implicit val sys = ActorSystem("test", akkaConfig)
-  implicit val flows: ActorMaterializer = ActorMaterializer()
-  implicit val exec: ExecutionContext = sys.dispatcher
+class LocalUsersSpec extends ActorSpec {
 
   implicit val tm = Span(5, Seconds)
-  implicit val patienceConfig = PatienceConfig(tm , tm)
+  implicit val patienceConfig = PatienceConfig(tm)
 
   "The LocalUsers module" should {
     "support adding entries" in {
@@ -86,30 +66,15 @@ class LocalUsersSpec extends WordSpec with Matchers with BeforeAndAfterAll {
 
       {
         val fget = store.delete("a")
-        val o = fget.futureValue
-        o match {
-          case Bad(issues) => println(s"** issues: $issues")
-          case _ => fail("Unexpected value for failed delete")
-        }
+        fget.futureValue shouldBe a [Bad[_,Issue]]
       }
 
-//      val fdel = store.delete("a")
-//      whenReady(fdel, timeout(tm)) { u =>
-//        u shouldBe Good(Some(user))
-//      }
-//
-//      val fget2 = store.get("a")
-//      whenReady(fget2, timeout(tm)) { u =>
-//        u shouldBe Good(None)
-//      }
+      {
+        val fget = store.get("a")
+        fget.futureValue shouldBe Good(None)
+      }
 
       ref.get ! ModuleDeleteAll
-
-
     }
-  }
-
-  override protected def afterAll(): Unit = {
-    Await.result(sys.terminate(),5.seconds)
   }
 }

@@ -16,10 +16,6 @@
 
 package org.funobjects.r34.auth
 
-import org.funobjects.r34.Issue
-import org.scalactic.{Every, Or}
-
-import scala.concurrent.Future
 import scala.language.implicitConversions
 
 /**

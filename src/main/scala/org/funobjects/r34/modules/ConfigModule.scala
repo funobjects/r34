@@ -23,7 +23,8 @@ import akka.http.scaladsl.server.Directives._
 import akka.persistence.{RecoveryCompleted, PersistentActor}
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
-import org.funobjects.r34.ResourceModule
+import org.funobjects.r34.{Issue, ResourceModule}
+import org.scalactic.{Bad, Good, Or, Every}
 
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
@@ -32,7 +33,7 @@ import scala.util.{Failure, Success, Try}
 /**
  * Created by rgf on 5/28/15.
  */
-class ConfigModule(id: String)(implicit val sys: ActorSystem, exec: ExecutionContext, flows: ActorMaterializer) extends ResourceModule()(sys, exec, flows) {
+class ConfigModule(id: String)(implicit val sys: ActorSystem, exec: ExecutionContext, mat: ActorMaterializer) extends ResourceModule()(sys, exec, mat) {
   override val name: String = ConfigModule.name
   override val props: Option[Props] = Some(Props(classOf[ConfigModule.ConfigActor], id))
   override val routes: Option[Route] = Some(configRoutes)
@@ -69,7 +70,7 @@ object ConfigModule {
   case class CheckAndMergeConfig(cfg: Config, expected: Config) extends ConfigCmd
 
   case object GetConfig extends ConfigCmd
-  case class ConfigResponse(cfg: Config) extends ConfigCmd
+  case class ConfigResponse(cfg: Config Or Every[Issue]) extends ConfigCmd
 
   sealed trait ConfigEvent
 
@@ -120,7 +121,7 @@ object ConfigModule {
     override def receiveRecover: Receive = processEvent
 
     def receivedCommand: Receive = {
-      case GetConfig                                => sender ! ConfigResponse(cfg)
+      case GetConfig                                => sender ! ConfigResponse(Good(cfg))
       case SetConfig(newCfg)                        => setConfig(newCfg)
       case MergeConfig(newCfg)                      => mergeConfig(newCfg)
       case CheckAndSetConfig(newCfg, expectedCfg)   => checkAndSetConfig(newCfg, expectedCfg)
@@ -135,17 +136,34 @@ object ConfigModule {
       case ev: AnyRef             => println(s"unknown event: ${ev.getClass.getName} $ev")
     }
 
-    def setConfig(newCfg: Config): Unit = persist(ConfigUpdated(newCfg)) { event =>
-      val old = cfg
-      processEvent(event)
-      sender() ! ConfigResponse(old)
-    }
+    def setConfig(newCfg: Config): Unit =
+      persist(ConfigUpdated(newCfg)) { event =>
+        val old = cfg
+        processEvent(event)
+        sender() ! ConfigResponse(Good(old))
+      }
 
-    def checkAndSetConfig(newCfg: Config, expectedCfg: Config): Unit = if (cfg == expectedCfg) setConfig(newCfg)
+    def checkAndSetConfig(newCfg: Config, expectedCfg: Config): Unit =
+      if (cfg == expectedCfg) {
+        setConfig(newCfg)
+      } else {
+        sender() ! ConfigResponse(Bad(Issue("CheckAndSetConfig: config does not match expected value.")))
+      }
 
-    def mergeConfig(newCfg: Config): Unit = persist(ConfigMerged(newCfg)) { event => processEvent(event) }
 
-    def checkAndMerge(newCfg: Config, expectedCfg: Config): Unit = if (cfg == expectedCfg) mergeConfig(newCfg)
+    def mergeConfig(newCfg: Config): Unit =
+      persist(ConfigMerged(newCfg)) { event =>
+        val old = cfg
+        processEvent(event)
+        sender() ! ConfigResponse(Good(old))
+      }
+
+    def checkAndMerge(newCfg: Config, expectedCfg: Config): Unit =
+      if (cfg == expectedCfg) {
+        mergeConfig(newCfg)
+      } else {
+        sender() ! ConfigResponse(Bad(Issue("CheckAndMergeConfig: config does not match expected value.")))
+      }
 
     def logMsg(msg: String): Receive = {
       case a: AnyRef => println(s"$msg: got ${a.getClass.getName}")

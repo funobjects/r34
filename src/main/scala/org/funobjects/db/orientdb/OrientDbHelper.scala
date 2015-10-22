@@ -37,7 +37,7 @@ object OrientDbHelper {
   /**
    * Deletes the database if it exists,
    */
-  def removeDatabase(db: ODatabaseDocumentTx, user: String, pass: String) = {
+  def removeDatabase(db: ODatabaseDocumentTx, user: String, pass: String): Unit = {
     if (db.exists()) {
       if (db.isClosed) {
         db.open(user, pass)
@@ -45,6 +45,13 @@ object OrientDbHelper {
       // must be open to drop, and leaves db closed (and non-existent)
       db.drop()
     }
+  }
+
+  /**
+   * Deletes the database if it exists,
+   */
+  def removeDatabase(url: String, user: String, pass: String): Unit = {
+    removeDatabase(new ODatabaseDocumentTx(url), user, pass)
   }
 
   def openOrCreate(url: String, user: String, pass: String): ODatabaseDocumentTx = {

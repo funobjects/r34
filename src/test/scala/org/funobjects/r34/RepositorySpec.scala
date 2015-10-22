@@ -34,16 +34,7 @@ import scala.concurrent.duration._
 /**
  *
  */
-class RepositorySpec(sys: ActorSystem) extends TestKit(sys) with WordSpecLike with Matchers with ImplicitSender
-  with BeforeAndAfterAll {
-
-  def this() = this(ActorSystem("testActorSystem"))
-
-  override protected def afterAll(): Unit = {
-    Await.result(sys.terminate, 5.seconds)
-  }
-
-  lazy implicit val exec = sys.dispatcher
+class RepositorySpec extends ActorTestKitSpec {
 
 //  "TokenRepositoryActor" should {
 //    "do some stuff" in {
@@ -70,7 +61,6 @@ class RepositorySpec(sys: ActorSystem) extends TestKit(sys) with WordSpecLike wi
 
   "StoreModule actor" should {
     "be able to be instantiated" in {
-      implicit val flow = ActorMaterializer()
 
       val mod = new StorageModule[Int]("mod") {
 
@@ -82,10 +72,9 @@ class RepositorySpec(sys: ActorSystem) extends TestKit(sys) with WordSpecLike wi
 
         override val name: String = "mod"
       }
-      val ref: Option[ActorRef] = mod.props.map(p => sys.actorOf(p))
+      val ref: Option[ActorRef] = mod.props.map(p => system.actorOf(p))
 
       ref shouldBe a [Some[_]]
     }
   }
-
 }

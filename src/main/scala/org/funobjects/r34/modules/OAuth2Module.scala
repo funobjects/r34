@@ -37,7 +37,7 @@ class OAuth2Module(implicit sys: ActorSystem,
   executionContext: ExecutionContext,
   mat: ActorMaterializer,
   userRepository: Repository[String, SimpleUser],
-  tokenRepository: Store[BearerToken, TokenEntry[SimpleUser]]) extends ResourceModule {
+  tokenStore: Store[BearerToken, TokenEntry[SimpleUser]]) extends ResourceModule {
 
   implicit val jsonFormats = org.json4s.DefaultFormats
 
@@ -55,7 +55,7 @@ class OAuth2Module(implicit sys: ActorSystem,
               Authenticate(user, pass) map {
                 case Good(authedUser) =>
                   val tk = BearerToken.generate(32)
-                  tokenRepository.update(tk, TokenEntry(authedUser.user, Permits.empty, None)) map {
+                  tokenStore.update(tk, TokenEntry(authedUser.user, Permits.empty, None)) map {
                     case Good(prev) => HttpResponse(StatusCodes.OK, entity = writePretty("token" -> tk.token))
                     case _ => HttpResponse(StatusCodes.BadRequest)
                   } recover {

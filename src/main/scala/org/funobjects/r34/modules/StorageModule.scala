@@ -51,10 +51,7 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
   def foldEvent[EV <: EntityEvent](ev: EV, entity: Option[ENTITY]): Option[ENTITY] = ev match {
       case EntityUpdated(id, any) =>
         println(s"*** Fold: setting value of $id to $any")
-//        any match {
-//          case ent: ENTITY => Some(ent)
-//        }
-        // we can't check against ENTITY due to type erasure
+        // we can't match against ENTITY due to type erasure
         Some(any.asInstanceOf[ENTITY])
       case EntityRemoved(id) =>
         println(s"*** Fold: removing value for $id")
@@ -85,8 +82,6 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
 
   // Note: EntityCommands (unlike EntityEvent, ModuleCommand, etc) are path dependent types;
   // this is so that they can have a proper type for the entity itself on the creation side
-  // (the message loop on the receive side will still have to do pattern matching on the entity
-  // due to type erasure)
   
   sealed trait EntityCommand { val id: String }
   sealed trait EntityCommandResponse
@@ -117,17 +112,16 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
     // Regex used to extract an id from a StorageEntityActor path
     val userKeyRegex = s""".*/user/store:$resType/([^/]+)""".r
 
-
     override def receiveCommand: Receive =
     {
       case cmd: EntityCommand =>
         println(s"*** EntityCommand: $cmd")
         entityCommand(cmd)
 
-      case event @ IndexEntryCreated(id)  if !(keys contains id)  => persist(event) { keys += _.id }
+      case event @ IndexEntryCreated(id)  if !(keys contains id) => persist(event) { keys += _.id }
         println(s"*** IndexEntityAdded: $id")
 
-      case event @ IndexEntryRemoved(id)  if keys contains id     => persist(event) { keys -= _.id }
+      case event @ IndexEntryRemoved(id)  if keys contains id => persist(event) { keys -= _.id }
         println(s"*** IndexEntityRemoved: $id")
 
       case Terminated(ref) => removeRef(ref)
@@ -142,6 +136,11 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
              ref <- refMap get key) {
           ref ! ModuleDeletePermanent(key)
         }
+        if (refMap.isEmpty)
+          Map.empty
+        deleteMessages(Long.MaxValue)
+        deleteSnapshots(SnapshotSelectionCriteria(Long.MaxValue, Long.MaxValue))
+        keys = TreeSet.empty
 
       case a: Any => println(s"**** Received unexpected msg: ${a.getClass.getName}")
     }

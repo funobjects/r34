@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package org.funobjects.r34
+package org.funobjects.r34.modules
 
-import akka.actor.{ActorSystem, Props}
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes, HttpResponse}
+import akka.actor.ActorSystem
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Source}
+import org.funobjects.r34.ResourceModule
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._

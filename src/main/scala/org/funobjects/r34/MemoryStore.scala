@@ -26,9 +26,8 @@ import scala.concurrent.{Future, ExecutionContext}
 class MemoryStore[K, V](implicit val exec: ExecutionContext) extends Store[K, V] {
   val map = collection.concurrent.TrieMap[K, V]()
 
-  override def get(key: K): Future[Option[V] Or Every[Issue]] = {
+  override def get(key: K): Future[Option[V] Or Every[Issue]] =
     Future.successful(Good(map.get(key)))
-  }
 
   override def update(key: K, value: V, create: Boolean): Future[Option[V] Or Every[Issue]] =
     Future.successful(Good(map.put(key, value)))

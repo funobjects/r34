@@ -18,9 +18,10 @@ package org.funobjects.r34
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import akka.testkit.{ImplicitSender, TestKit}
 import com.typesafe.config.{ConfigFactory, Config}
 import org.funobjects.db.orientdb.OrientDbHelper
-import org.scalatest.{Matchers, WordSpecLike, BeforeAndAfterAll}
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -28,16 +29,10 @@ import scala.concurrent.duration._
 /**
  * Base mix-in for tests working with actors.
  */
-class ActorSpec extends WordSpecLike with BeforeAndAfterAll with Matchers
+class ActorTestKitSpec extends TestKit(ActorTestKitSpec.newActorSystem) with WordSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender
 {
-  implicit val system = ActorSystem("ActorSpec", ActorSpec.akkaConfig)
   implicit val exec = system.dispatcher
   implicit val mat = ActorMaterializer()
-
-
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-  }
 
   override protected def afterAll(): Unit = {
     Await.result(system.terminate(), 5.second)
@@ -46,7 +41,7 @@ class ActorSpec extends WordSpecLike with BeforeAndAfterAll with Matchers
   }
 }
 
-object ActorSpec {
+object ActorTestKitSpec {
   val akkaConfig: Config = ConfigFactory.parseString(
     """
       akka.loglevel = WARNING
@@ -54,4 +49,6 @@ object ActorSpec {
       akka.persistence.journal.plugin = funobjects-akka-orientdb-journal
       funobjects-akka-orientdb-journal.db.url = "plocal:testJournal"
     """)
+
+  def newActorSystem = ActorSystem("ActorTestKitSpec", akkaConfig)
 }

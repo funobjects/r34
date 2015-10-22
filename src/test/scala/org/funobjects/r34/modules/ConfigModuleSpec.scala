@@ -16,13 +16,14 @@
 
 package org.funobjects.r34.modules
 
-import akka.actor.{ActorSystem, ActorRef}
+import akka.actor.{ActorIdentity, Identify, ActorSystem, ActorRef}
 import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory}
 import org.funobjects.r34.ActorSpec
 import org.funobjects.r34.modules.ConfigModule.{CheckAndSetConfig, SetConfig, ConfigResponse}
+import org.scalactic.Good
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{Matchers, WordSpec}
 import org.scalatest.OptionValues._
@@ -34,21 +35,7 @@ import scala.concurrent.duration._
  * Created by rgf on 10/9/15.
  */
 
-object ConfigModuleSpec {
-  val akkaConfig: Config = ConfigFactory.parseString(
-    """
-      akka.loglevel = WARNING
-      akka.log-dead-letters = off
-      akka.persistence.journal.plugin = funobjects-akka-orientdb-journal
-  """)
-
-  def newActorSystem = ActorSystem("ConfigModuleSpec", akkaConfig)
-}
-
-class ConfigModuleSpec extends ActorSpec(ConfigModuleSpec.newActorSystem) {
-
-  implicit val exec = system.dispatcher
-  implicit val mat = ActorMaterializer()
+class ConfigModuleSpec extends ActorSpec {
 
   implicit val akkaTimeout = Timeout(5.seconds)
   implicit val futureTimeout = PatienceConfig(Span(5, Seconds), Span(1, Seconds))
@@ -61,7 +48,9 @@ class ConfigModuleSpec extends ActorSpec(ConfigModuleSpec.newActorSystem) {
     val ref = cfg.start().value
 
     "create the module actor at the expected path" in {
-
+      val resp = (system.actorSelection("/user/config") ? Identify(0))
+        .mapTo[ActorIdentity]
+        .futureValue(futureTimeout)
     }
 
     "return an empty config before receiving any add or merge messages" in {
@@ -70,7 +59,7 @@ class ConfigModuleSpec extends ActorSpec(ConfigModuleSpec.newActorSystem) {
         .mapTo[ConfigResponse]
         .futureValue(futureTimeout)
 
-      resp shouldBe ConfigResponse(ConfigFactory.empty())
+      resp shouldBe ConfigResponse(Good(ConfigFactory.empty()))
     }
 
     "allow a config to be set" in {
@@ -84,13 +73,13 @@ class ConfigModuleSpec extends ActorSpec(ConfigModuleSpec.newActorSystem) {
         .mapTo[ConfigResponse]
         .futureValue(futureTimeout)
 
-      oldCfg.cfg shouldBe ConfigFactory.empty()
+      oldCfg.cfg shouldBe Good(ConfigFactory.empty())
 
       val newCfg = (ref ? ConfigModule.GetConfig)
         .mapTo[ConfigResponse]
         .futureValue(futureTimeout)
 
-      newCfg.cfg shouldBe cfg
+      newCfg.cfg shouldBe Good(cfg)
     }
 
     "fail to update the config if check semantics are used and the check value does not match" in {

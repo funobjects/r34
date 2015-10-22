@@ -25,30 +25,19 @@ import org.funobjects.r34.modules.TokenModule.TokenEntry
 import scala.concurrent.ExecutionContext
 
 /**
- * Created by rgf on 6/10/15.
+ * Token repository
  */
 class TokenModule[U](implicit sys: ActorSystem, exec: ExecutionContext, mat: ActorMaterializer) extends StorageModule[TokenEntry[U]]("token")(sys, exec, mat) {
 
   implicit def entryDeletable = new Deletable[TokenEntry[_]] {
-    override def isDeleted(entry: TokenEntry[_]): Boolean = ???
-
-    override def delete(entry: TokenEntry[_]): TokenEntry[_] = ???
-
-    override def deletedTime(entry: TokenEntry[_]): Long = ???
+    override def isDeleted(entry: TokenEntry[_]): Boolean = entry.deleted
+    override def delete(entry: TokenEntry[_]): TokenEntry[_] = if (entry.deleted) entry else entry.copy(deleted = true)
+    override def deletedTime(entry: TokenEntry[_]): Option[Long] = None
   }
-
-
-//  /**
-//   * Determines if an entity has been deleted.
-//   */
-//  override def isDeleted(entry: TokenEntry[U]): Boolean = entry.deleted
-//
-//  /**
-//   * Returns a copy of the entity which has been marked for deletion.
-//   */
-//  override def delete(entity: TokenEntry): TokenEntry[U] = entity.copy(deleted = true)
 }
 
 object TokenModule {
-  case class TokenEntry[U](user: U, papers: Permits, expires: Option[Long], deleted: Boolean = false)
+  case class TokenEntry[U](user: U, permits: Permits, expires: Option[Long], deleted: Boolean = false) {
+    def expired(now: Long) = expires.exists(_ <= now)
+  }
 }

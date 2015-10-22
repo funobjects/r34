@@ -18,12 +18,15 @@ package org.funobjects.r34
 
 /**
  * Indicates that an entity implements a "soft" delete by marking the entity
- * for deletion.  A timestamp is also provided to allow for later cleanup
- * based on entity age.
+ * for deletion.  A timestamp may also be provided (if supported by the underlying type)
+ * to allow for later cleanup based on deletion time.
+ *
+ * This is implemented as a typeclass to allow for generic event-sourcing style deletion
+ * of entity types from external domains.
  *
  */
 trait Deletable[A] {
   def isDeleted(a: A): Boolean
   def delete(a: A): A
-  def deletedTime(a: A): Long
+  def deletedTime(a: A): Option[Long]
 }
