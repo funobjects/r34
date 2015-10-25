@@ -18,7 +18,7 @@ package org.funobjects.r34.modules
 
 import akka.actor._
 import akka.pattern.ask
-import akka.persistence.{SnapshotSelectionCriteria, SnapshotOffer, PersistentActor}
+import akka.persistence.{RecoveryCompleted, SnapshotSelectionCriteria, SnapshotOffer, PersistentActor}
 import akka.stream.ActorMaterializer
 import org.funobjects.r34._
 import org.scalactic.{Bad, Good, Every, Or}
@@ -49,25 +49,14 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
    * @return        The entity after folding in the event.
    */
   def foldEvent[EV <: EntityEvent](ev: EV, entity: Option[ENTITY]): Option[ENTITY] = ev match {
+      // this cast is necessary because the we can't match against ENTITY due to type erasure
       case EntityUpdated(id, any) =>
-        println(s"*** Fold: setting value of $id to $any")
-        // we can't match against ENTITY due to type erasure
         Some(any.asInstanceOf[ENTITY])
       case EntityRemoved(id) =>
         println(s"*** Fold: removing value for $id")
         None
       case _ => entity
     }
-
-  /**
-   * Determines if an entity has been deleted.
-   */
-  def isDeleted(entity: ENTITY)(implicit del: Deletable[ENTITY]): Boolean = del.isDeleted(entity)
-
-  /**
-   * Returns a copy of the entity which has been marked for deletion.
-   */
-  def delete(entity: ENTITY)(implicit del: Deletable[ENTITY]): ENTITY = del.delete(entity)
 
   override val name = s"store:$resType"
   override val props = Some(Props(classOf[StorageMasterActor], this))
@@ -208,11 +197,13 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
 
     override def receiveRecover: Receive = {
       case event: IndexEvent => indexEvent(event)
+      case RecoveryCompleted =>
+      case a: Any => log.error("Unsupported event during replay: " + a.getClass.getName)
     }
 
     def indexEvent(event: IndexEvent) = event match {
       case IndexEntryCreated(id) if !(keys contains id)  => keys += id
-      case IndexEntryRemoved(id) if keys contains id     => keys -= id
+      case IndexEntryRemoved(id) if keys contains id => keys -= id
     }
   }
 
@@ -224,6 +215,7 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
 
     override def receiveRecover: Receive = {
       case event: EntityEvent => entity = foldEvent(event, entity)
+      case RecoveryCompleted =>
       case _ =>
     }
 
@@ -237,7 +229,7 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
 
       case CheckAndUpdateEntity(id, updated, expected) =>
         if (entity.contains(expected))
-          persistAndFold(id, EntityUpdated(id, entity))
+          persistAndFold(id, EntityUpdated(id, updated))
         else
           sender ! UpdateEntityResponse(id, Bad(Issue("Value check failed: current value does not match expected value.")))
 
@@ -337,13 +329,13 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
 
 object StorageModule {
 
-  trait EntityEvent
-  case class EntityUpdated(id: String, entity: Any) extends EntityEvent
-  case class EntityRemoved(id: String) extends EntityEvent
-
   trait IndexEvent
   case class IndexEntryCreated(id: String) extends IndexEvent
   case class IndexEntryRemoved(id: String) extends IndexEvent
+
+  trait EntityEvent
+  case class EntityUpdated(id: String, entity: Any) extends EntityEvent
+  case class EntityRemoved(id: String) extends EntityEvent
 
   sealed trait ModuleCommand
 

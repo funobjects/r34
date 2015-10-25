@@ -27,7 +27,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 /**
- * Base mix-in for tests working with actors.
+ * Base class for tests working with actors.
  */
 class ActorTestKitSpec extends TestKit(ActorTestKitSpec.newActorSystem) with WordSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender
 {

@@ -17,24 +17,14 @@
 package org.funobjects.r34
 
 import akka.actor.Actor.Receive
-import akka.actor.{Props, Actor, ActorRef, ActorSystem}
-import akka.stream.ActorMaterializer
-import akka.testkit._
-import org.funobjects.r34.auth._
+import akka.actor.{Props, Actor, ActorRef}
+import org.funobjects.r34.StorageModuleSpec.MinimalActor
 import org.funobjects.r34.modules.StorageModule
-import org.funobjects.r34.modules.StorageModule.EntityEvent
-import org.funobjects.r34.modules.TokenModule.TokenEntry
-import org.scalactic.Good
-
-import org.scalatest.{WordSpecLike, BeforeAndAfterAll, Matchers}
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 /**
  *
  */
-class RepositorySpec extends ActorTestKitSpec {
+class StorageModuleSpec extends ActorTestKitSpec {
 
 //  "TokenRepositoryActor" should {
 //    "do some stuff" in {
@@ -63,18 +53,16 @@ class RepositorySpec extends ActorTestKitSpec {
     "be able to be instantiated" in {
 
       val mod = new StorageModule[Int]("mod") {
-
-        override def repository: Option[Repository[String, Int]] = ???
-
-        override def isDeleted(entity: Int)(implicit del: Deletable[Int]): Boolean = entity < 0
-
-        override def delete(entity: Int)(implicit del: Deletable[Int]): Int = -1
-
-        override val name: String = "mod"
+        override val props = Some(Props[MinimalActor])
       }
-      val ref: Option[ActorRef] = mod.props.map(p => system.actorOf(p))
-
+      val ref: Option[ActorRef] = mod.start()
       ref shouldBe a [Some[_]]
     }
+  }
+}
+
+object StorageModuleSpec {
+  class MinimalActor extends Actor {
+      override def receive: Receive = { case _ => }
   }
 }

@@ -18,8 +18,8 @@ package org.funobjects.r34.modules
 
 import org.funobjects.r34.{Issue, ActorSpec}
 import org.funobjects.r34.auth.SimpleUser
-import org.funobjects.r34.modules.StorageModule.ModuleDeleteAll
-import org.scalactic.{Every, One, Bad, Good}
+import org.scalactic.{Bad, Good}
+import org.scalatest.OptionValues._
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.concurrent.ScalaFutures._
 
@@ -31,50 +31,52 @@ class LocalUsersSpec extends ActorSpec {
   implicit val tm = Span(5, Seconds)
   implicit val patienceConfig = PatienceConfig(tm)
 
+  val mod = new LocalUsers()
+  val user = SimpleUser("a", "pass")
+  val ref = mod.start().value
+  val store = mod.store.value
+
   "The LocalUsers module" should {
-    "support adding entries" in {
-      val mod = new LocalUsers()
-      val user = SimpleUser("a", "pass")
 
-      val ref = mod.start()
-      ref shouldBe 'defined
-
-      val maybeStore = mod.store
-      maybeStore shouldBe 'defined
-
-      val store = maybeStore.get
-
-      {
-        val fget = store.get("a")
-        fget.futureValue shouldBe Good(None)
-      }
-
-      {
-        val fput = store.update("a", user)
-        fput.futureValue shouldBe Good(None)
-      }
-
-      {
-        val fget = store.get("a")
-        fget.futureValue shouldBe Good(Some(user))
-      }
-
-      {
-        val fget = store.delete("a")
-        fget.futureValue shouldBe Good(Some(user))
-      }
-
-      {
-        val fget = store.delete("a")
-        fget.futureValue shouldBe a [Bad[_,Issue]]
-      }
-
-      {
-        val fget = store.get("a")
-        fget.futureValue shouldBe Good(None)
-      }
-
-      ref.get ! ModuleDeleteAll
+    "should not find an entry that hasn't been added" in {
+      val fget = store.get("a")
+      fget.futureValue shouldBe Good(None)
     }
+
+    "should return Good(None) when adding an entry that did not previously exist" in {
+      val fput = store.update("a", user)
+      fput.futureValue shouldBe Good(None)
+    }
+
+    "should return an entry that has been added" in {
+      val fget = store.get("a")
+      fget.futureValue shouldBe Good(Some(user))
+    }
+
+    "should allow an entry to be deleted" in {
+      val fget = store.delete("a")
+      fget.futureValue shouldBe Good(Some(user))
+    }
+
+    "should return an error when deleting an entry that has been deleted" in {
+      val fget = store.delete("a")
+      fget.futureValue shouldBe a[Bad[_, Issue]]
+    }
+
+    "should return an error when deleting an entry that has not been added" in {
+      val fget = store.delete("abc")
+      fget.futureValue shouldBe a[Bad[_, Issue]]
+    }
+
+    "should return None for an entry that does not exist" in {
+      val fget = store.get("a")
+      fget.futureValue shouldBe Good(None)
+    }
+
+      //ref.get ! ModuleDeleteAll
+  }
+
+  override protected def afterAll(): Unit = {
+    super.afterAll()
   }
 }

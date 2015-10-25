@@ -29,7 +29,7 @@ import scala.concurrent.{Await, Future}
 import scala.util.{Try, Failure, Success}
 
 /**
- * Created by rgf on 2/28/15.
+ * scratchpad for experimenting with running requests through streams
  */
 class FlowStuffSpec extends WordSpec with Matchers with BeforeAndAfterAll with Eventually {
 

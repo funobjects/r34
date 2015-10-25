@@ -18,7 +18,6 @@ package org.funobjects.r34.modules
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import org.funobjects.r34.Deletable
 import org.funobjects.r34.auth.SimpleUser
 
 import scala.concurrent.ExecutionContext
@@ -30,11 +29,4 @@ class LocalUsers()(implicit sys: ActorSystem, exec: ExecutionContext, mat: Actor
   extends StorageModule[SimpleUser]("user")(sys, exec, mat) {
 
   override val routes = None
-
-  override def isDeleted(entity: SimpleUser)(implicit del: Deletable[SimpleUser]): Boolean = entity.isDeleted
-
-  /**
-   * Returns a copy of the entity which has been marked for deletion.
-   */
-  override def delete(entity: SimpleUser)(implicit del: Deletable[SimpleUser]): SimpleUser = entity.copy(isDeleted = true)
 }

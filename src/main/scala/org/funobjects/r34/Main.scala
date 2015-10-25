@@ -24,7 +24,6 @@ import akka.stream.ActorMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
 
 import org.funobjects.r34.modules._
-import org.funobjects.r34.auth._
 
 import scala.concurrent.ExecutionContext
 
@@ -39,8 +38,11 @@ trait Server {
   val debugModule = new DebugResources()
   val adminModule = new LocalAdmin()
   val userModule = new LocalUsers()
-  val tokenModule = new TokenModule[SimpleUser]()
-  val all = new Aggregation(instanceId, List(configModule, adminModule, userModule, tokenModule, debugModule))
+
+  implicit val userStore = userModule.store.getOrElse(throw new Exception("no user module store"))
+  val authModule = new OAuth2Module()
+
+  val all = new Aggregation(instanceId, List(configModule, adminModule, userModule, authModule, debugModule))
 
   val noRoute: Route = { reject }
 }
@@ -58,7 +60,6 @@ object Main extends App with Server {
   override implicit val sys = ActorSystem("r34", akkaConfig)
   override implicit val flows = ActorMaterializer()
   override implicit val exec = sys.dispatcher
-
 
   all.routes foreach { routes =>
     val serverBinding = Http(sys).bind(interface = "localhost", port = 3434).runForeach { connection =>
