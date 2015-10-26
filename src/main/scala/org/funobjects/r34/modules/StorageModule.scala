@@ -214,7 +214,8 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
     override def persistenceId: String = s"$resType:$entityId"
 
     override def receiveRecover: Receive = {
-      case event: EntityEvent => entity = foldEvent(event, entity)
+      case event: EntityEvent         => entity = foldEvent(event, entity)
+      case SnapshotOffer(_, snapshot) => entity = Some(snapshot.asInstanceOf[ENTITY])
       case RecoveryCompleted =>
       case _ =>
     }
@@ -238,8 +239,6 @@ abstract class StorageModule[ENTITY](resType: String)(implicit val sys: ActorSys
         entity = foldEvent(event, entity)
         sender ! DeleteEntityResponse(id, Good(before))
       }
-
-      case SnapshotOffer(_, snapshot) => entity = Some(snapshot.asInstanceOf[ENTITY])
 
       case ModuleDeletePermanent(id) =>
         deleteMessages(Long.MaxValue)

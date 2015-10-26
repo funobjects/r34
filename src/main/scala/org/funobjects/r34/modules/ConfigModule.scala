@@ -45,11 +45,6 @@ class ConfigModule(id: String)(implicit val sys: ActorSystem, exec: ExecutionCon
         sys.scheduler.scheduleOnce(1.second) { sys.terminate() }
         HttpResponse(StatusCodes.OK)
       }
-    } ~
-    path(Segment) {
-      case "foo" => complete(HttpResponse(StatusCodes.OK, entity = "bar"))
-      case "hi" => complete(HttpResponse(StatusCodes.OK, entity = "there"))
-      case _ => complete(HttpResponse(StatusCodes.NotFound))
     }
   }
 
@@ -149,7 +144,6 @@ object ConfigModule {
       } else {
         sender() ! ConfigResponse(Bad(Issue("CheckAndSetConfig: config does not match expected value.")))
       }
-
 
     def mergeConfig(newCfg: Config): Unit =
       persist(ConfigMerged(newCfg)) { event =>
