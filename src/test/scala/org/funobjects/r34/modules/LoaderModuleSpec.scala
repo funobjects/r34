@@ -48,7 +48,7 @@ class LoaderModuleSpec extends ActorTestKitSpec {
         case _ => fail("Unable to get version base from version string: " + thisVersion)
       }
 
-      val targetPath = Paths.get("/Users", "rgf", "git", "r34",  "testModule", "target", s"scala-$scalaBase")
+      val targetPath = Paths.get("testModule", "target", s"scala-$scalaBase")
 
       val maybeFile = targetPath.toFile.listFiles().find(_.getName.endsWith(".jar"))
       maybeFile map { file =>
@@ -57,11 +57,17 @@ class LoaderModuleSpec extends ActorTestKitSpec {
         val lookedUpLoaderRef = Await.result(loaderSel.resolveOne(4.seconds), 5.seconds)
 
         // create load request
-        val url = new URL(s"file://${file.getPath}")
+        val url = new URL(s"file://${file.getAbsolutePath}")
         val loadMsg = LoaderModule.Load(url, "org.funobjects.r34.modules.TestModule", system, exec, mat)
         lookedUpLoaderRef ! loadMsg
         val inst: LoaderModule.Instance = expectMsgClass(classOf[LoaderModule.Instance])
         inst.result shouldBe a [Good[_, _]]
+
+        val testSel = system.actorSelection(s"/user/test")
+        val testRef = Await.result(testSel.resolveOne(4.seconds), 5.seconds)
+
+        testSel ! "ping"
+        expectMsg("pong")
 
         println("instance: " + inst)
         ""
