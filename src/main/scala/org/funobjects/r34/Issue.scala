@@ -23,18 +23,18 @@ import scala.language.implicitConversions
 /**
  * Represents an error or other exception while processing.
  */
-case class Issue(
+case class Issue (
   msg: String,
-  parms: Array[Any],
+  parms: Array[AnyRef],
   ex: Option[Throwable] = None,
   tag: Option[String] = None) {
 
-  override def toString = String.format(msg, parms)
+  override def toString = String.format(msg, parms: _*) + ex.map("\n" + _.getMessage).getOrElse("")
 }
 
 object Issue {
-  def apply(msg: String): Issue = Issue(msg, Array(), None, None)
-  def apply(msg: String, ex: Exception): Issue = Issue(msg, Array(), Some(ex), None)
-  def apply(msg: String, o: Any): Issue = Issue(msg, Array(o), None, None)
+  def apply(msg: String): Issue = new Issue(msg, Array(), None, None)
+  def apply(msg: String, ex: Throwable): Issue = new Issue(msg, Array(), Some(ex), None)
+  def apply[T <: AnyRef](msg: String, parms: Array[T]): Issue = new Issue(msg, parms.asInstanceOf[Array[AnyRef]], None, None)
   implicit def issueToOneIssue(issue: Issue): One[Issue] = One(issue)
 }

@@ -22,7 +22,7 @@ import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory}
 import org.funobjects.r34.ActorSpec
-import org.funobjects.r34.modules.ConfigModule.{CheckAndSetConfig, SetConfig, ConfigResponse}
+import org.funobjects.r34.modules.ConfigModule._
 import org.scalactic.Good
 import org.scalatest.time.{Seconds, Span}
 import org.scalatest.{Matchers, WordSpec}

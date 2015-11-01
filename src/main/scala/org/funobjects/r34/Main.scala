@@ -22,7 +22,6 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
 import com.typesafe.config.{ConfigFactory, Config}
-
 import org.funobjects.r34.modules._
 
 import scala.concurrent.ExecutionContext

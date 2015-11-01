@@ -16,6 +16,8 @@
 
 package org.funobjects.r34.modules
 
+import java.net.{URL, URLClassLoader}
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{HttpEntity, ContentTypes, StatusCodes, HttpResponse}
 import akka.http.scaladsl.server.Directives._
@@ -33,8 +35,9 @@ import scala.concurrent.duration._
 class LocalAdmin(implicit val sys: ActorSystem, exec: ExecutionContext, flows: ActorMaterializer) extends ResourceModule {
   override val name: String = "admin"
   override val routes: Option[Route] = Some {
-    path("hi") {
+    path("load") {
       complete {
+          val loader = new URLClassLoader(Array(new URL("file://./hue-and-cry_2.11-0.1-SNAPSHOT.jar")), this.getClass.getClassLoader)
           HttpResponse(StatusCodes.OK, entity = HttpEntity("there"))
       }
     } ~

@@ -1,16 +1,17 @@
 name := "r34"
 
-organization := "org.funobjects"
+version := "0.9.0-SNAPSHOT"
 
-scalaVersion := "2.11.7"
-
-resolvers += Resolver.sonatypeRepo("public")
-
-resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+lazy val commonSettings = Seq(
+  organization := "org.funobjects",
+  scalaVersion := "2.11.7",
+  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+)
 
 fork := true
 
-libraryDependencies ++= {
+lazy val commonDependencies = {
   object v {
     val akka        = "2.4.0"
     val akkaHttp    = "1.0"
@@ -39,3 +40,16 @@ libraryDependencies ++= {
   )
 }
 
+// Lazy vals aren't lazy enough for aggregation of subprojects; this currently
+// (0.13.9) requires use of LocalProject to avoid a circular dependency
+lazy val testModuleRef = LocalProject("testModule")
+
+lazy val root = (project in file("."))
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= commonDependencies)
+  .aggregate(testModuleRef)
+
+lazy val testModule = project
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= commonDependencies)
+  .dependsOn(root)

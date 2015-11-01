@@ -23,10 +23,10 @@ import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
 import org.funobjects.r34.auth._
-import org.funobjects.r34.modules.OAuth2Module.TokenEntry
 import org.funobjects.r34.Repository
 import org.json4s.jackson.Serialization._
 import org.scalactic.{Bad, Good}
+import OAuth2Module._
 
 import scala.concurrent.{Future, ExecutionContext}
 import scala.util.control.NonFatal

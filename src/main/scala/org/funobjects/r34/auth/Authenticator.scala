@@ -44,7 +44,7 @@ class SimpleAuthenticator(implicit userRepo: Repository[String, SimpleUser])
   override def authenticate(id: String, cred: String)(implicit exec: ExecutionContext) =
     userRepo.get(id).map {
       case Good(Some(user)) => checkCred(user, cred)
-      case Good(None) => Bad(Issue("User %s not found.", id))
+      case Good(None) => Bad(Issue("User %s not found.", Array(id)))
       case Bad(issues) => Bad(issues)
     }
 
@@ -52,5 +52,5 @@ class SimpleAuthenticator(implicit userRepo: Repository[String, SimpleUser])
     if (user.password == cred)
       Good(Identified(user))
     else
-      Bad(Issue("User %s name or password is incorrect.", user.name))
+      Bad(Issue("User %s name or password is incorrect.", Array(user.name)))
 }
