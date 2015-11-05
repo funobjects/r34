@@ -44,12 +44,19 @@ lazy val commonDependencies = {
 // (0.13.9) requires use of LocalProject to avoid a circular dependency
 lazy val testModuleRef = LocalProject("testModule")
 
+lazy val invalidModuleRef = LocalProject("invalidModule")
+
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= commonDependencies)
-  .aggregate(testModuleRef)
+  .aggregate(testModuleRef, invalidModuleRef)
 
 lazy val testModule = project
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= commonDependencies)
+  .dependsOn(root)
+
+lazy val invalidModule = project
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= commonDependencies)
   .dependsOn(root)

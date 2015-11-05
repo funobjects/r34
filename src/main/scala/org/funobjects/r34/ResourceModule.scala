@@ -49,7 +49,8 @@ abstract class ResourceModule(implicit sys: ActorSystem, exec: ExecutionContext,
   val subscriptions: List[String] = Nil
 
   /**
-   * Try to create the module actor, if defined, in associated actor system.
+   * Try to create the module actor, if defined, the associated actor system.
+   *
    * @return
    */
   def start(): Option[ActorRef] = props map { p => sys.actorOf(p, name) }

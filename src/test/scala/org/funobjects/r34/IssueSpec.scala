@@ -13,13 +13,25 @@ class IssueSpec extends WordSpec with Matchers {
       issue.toString shouldBe "Hello there."
 
     }
-    "be able to be created from a string with paramters" in {
+    "be able to be created from a string with parameters" in {
       Issue("This is a %1$s", Array("test.")).toString shouldBe "This is a test."
     }
     "be able to be created from a string and exception" in {
       val ex = new Exception("foo bar")
       val issue = Issue("This is a test.", ex)
-      issue.toString shouldBe "This is a test.\nfoo bar"
+      issue.toString shouldBe "This is a test. [foo bar]"
+    }
+    "include related issues" in {
+      val issue1 = Issue("Issue 1")
+      val issue2 = Issue("Issue 2", new Exception("Boo!"))
+      val issue3 = Issue("Issue 3")
+
+      val both = issue1 :+ issue2
+      both.toString shouldBe "Issue 1\n    Issue 2 [Boo!]"
+      (both :+ issue3).toString shouldBe "Issue 1\n    Issue 2 [Boo!]\n    Issue 3"
+
+      val all = issue1 ++ Seq(issue2, issue3)
+      all.toString shouldBe "Issue 1\n    Issue 2 [Boo!]\n    Issue 3"
     }
   }
 }

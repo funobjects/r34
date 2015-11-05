@@ -16,6 +16,7 @@
 
 package org.funobjects.r34
 
+
 import org.scalactic.One
 
 import scala.language.implicitConversions
@@ -27,9 +28,19 @@ case class Issue (
   msg: String,
   parms: Array[AnyRef],
   ex: Option[Throwable] = None,
-  tag: Option[String] = None) {
+  tag: Option[String] = None,
+  related: Array[Issue] = Array.empty) {
 
-  override def toString = String.format(msg, parms: _*) + ex.map("\n" + _.getMessage).getOrElse("")
+  def :+(other: Issue): Issue = copy(related = related :+ other)
+  def ++(others: Seq[Issue]): Issue = copy(related = related ++ others)
+
+  def fmtShort(prefix: String): String = {
+    prefix + fmtThis + (if (related.isEmpty) "" else related.map(_.fmtShort(prefix + "    ")).mkString("\n", "\n", ""))
+  }
+
+  def fmtThis: String = String.format(msg, parms: _*) + ex.map(" [" + _.getMessage + "]").getOrElse("")
+
+  override def toString = fmtShort("")
 }
 
 object Issue {
