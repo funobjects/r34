@@ -21,7 +21,7 @@ import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory}
-import org.funobjects.r34.ActorSpec
+import org.funobjects.r34.R34ActorSpec
 import org.funobjects.r34.modules.ConfigModule._
 import org.scalactic.Good
 import org.scalatest.time.{Seconds, Span}
@@ -35,7 +35,7 @@ import scala.concurrent.duration._
  * Created by rgf on 10/9/15.
  */
 
-class ConfigModuleSpec extends ActorSpec {
+class ConfigModuleSpec extends R34ActorSpec {
 
   implicit val akkaTimeout = Timeout(5.seconds)
   implicit val futureTimeout = PatienceConfig(Span(5, Seconds), Span(1, Seconds))

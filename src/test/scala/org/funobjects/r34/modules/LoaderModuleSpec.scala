@@ -21,7 +21,7 @@ import java.net.URL
 import java.nio.file.{Path, FileSystems, Files, Paths}
 
 import akka.actor.{PoisonPill, Terminated, ActorRef}
-import org.funobjects.r34.{Issue, ResourceModule, ActorTestKitSpec}
+import org.funobjects.r34.{Issue, ResourceModule, R34TestKitSpec}
 import org.scalactic.{Bad, Every, Good}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.OptionValues._
@@ -34,7 +34,7 @@ import scala.concurrent.duration._
 /**
  * Tests for dynamic module loading.
  */
-class LoaderModuleSpec extends ActorTestKitSpec with BeforeAndAfterEach {
+class LoaderModuleSpec extends R34TestKitSpec with BeforeAndAfterEach {
 
   val loader = new LoaderModule()
   var loaderRef: Option[ActorRef] = None

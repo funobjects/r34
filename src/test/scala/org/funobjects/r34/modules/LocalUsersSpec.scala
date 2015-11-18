@@ -16,7 +16,7 @@
 
 package org.funobjects.r34.modules
 
-import org.funobjects.r34.{Issue, ActorSpec}
+import org.funobjects.r34.{Issue, R34ActorSpec}
 import org.funobjects.r34.auth.SimpleUser
 import org.scalactic.{Bad, Good}
 import org.scalatest.OptionValues._
@@ -26,7 +26,7 @@ import org.scalatest.concurrent.ScalaFutures._
 /**
  * Tests for the LocalUsers module.
  */
-class LocalUsersSpec extends ActorSpec {
+class LocalUsersSpec extends R34ActorSpec {
 
   implicit val tm = Span(5, Seconds)
   implicit val patienceConfig = PatienceConfig(tm)

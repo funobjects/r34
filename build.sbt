@@ -40,8 +40,8 @@ lazy val commonDependencies = {
   )
 }
 
-// Lazy vals aren't lazy enough for aggregation of subprojects; this currently
-// (0.13.9) requires use of LocalProject to avoid a circular dependency
+// Lazy vals aren't lazy enough for aggregation of subprojects that depend on the root.
+// With SBT (as of 0.13.9) this common pattern requires use of LocalProject to avoid a circular dependency.
 lazy val testModuleRef = LocalProject("testModule")
 
 lazy val invalidModuleRef = LocalProject("invalidModule")

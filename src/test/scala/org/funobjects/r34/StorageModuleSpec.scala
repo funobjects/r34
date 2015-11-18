@@ -24,7 +24,7 @@ import org.funobjects.r34.modules.StorageModule
 /**
  *
  */
-class StorageModuleSpec extends ActorTestKitSpec {
+class StorageModuleSpec extends R34TestKitSpec {
 
 //  "TokenRepositoryActor" should {
 //    "do some stuff" in {

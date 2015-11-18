@@ -29,7 +29,7 @@ import scala.concurrent.duration._
 /**
  * Base class for tests working with actors.
  */
-class ActorTestKitSpec extends TestKit(ActorTestKitSpec.newActorSystem) with WordSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender
+class R34TestKitSpec extends TestKit(R34TestKitSpec.newActorSystem) with WordSpecLike with BeforeAndAfterAll with Matchers with ImplicitSender
 {
   implicit val exec = system.dispatcher
   implicit val mat = ActorMaterializer()
@@ -41,7 +41,7 @@ class ActorTestKitSpec extends TestKit(ActorTestKitSpec.newActorSystem) with Wor
   }
 }
 
-object ActorTestKitSpec {
+object R34TestKitSpec {
   val akkaConfig: Config = ConfigFactory.parseString(
     """
       akka.loglevel = WARNING
