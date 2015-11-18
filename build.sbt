@@ -42,21 +42,22 @@ lazy val commonDependencies = {
 
 // Lazy vals aren't lazy enough for aggregation of subprojects that depend on the root.
 // With SBT (as of 0.13.9) this common pattern requires use of LocalProject to avoid a circular dependency.
-lazy val testModuleRef = LocalProject("testModule")
+// Note the argument to LocalProject is the project name, not the location.
+lazy val multiModuleRef = LocalProject("multiModule")
 
 lazy val invalidModuleRef = LocalProject("invalidModule")
 
 lazy val root = (project in file("."))
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= commonDependencies)
-  .aggregate(testModuleRef, invalidModuleRef)
+  .aggregate(multiModuleRef, invalidModuleRef)
 
-lazy val testModule = project
+lazy val multiModule = (project in file("testModules") / "multiModule")
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= commonDependencies)
   .dependsOn(root)
 
-lazy val invalidModule = project
+lazy val invalidModule = (project in file("testModules") / "invalidModule")
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= commonDependencies)
   .dependsOn(root)

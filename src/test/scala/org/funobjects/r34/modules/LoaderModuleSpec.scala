@@ -69,7 +69,7 @@ class LoaderModuleSpec extends R34TestKitSpec with BeforeAndAfterEach {
   "LoaderModule" should {
     "load a module by url and class name" in {
 
-      targetJarFor("testModule") map { file =>
+      targetJarFor("multiModule") map { file =>
 
         val loaderSel = system.actorSelection(s"/user/loader")
         val lookedUpLoaderRef = Await.result(loaderSel.resolveOne(4.seconds), 5.seconds)
@@ -89,13 +89,13 @@ class LoaderModuleSpec extends R34TestKitSpec with BeforeAndAfterEach {
         expectMsg("pong")
       } getOrElse {
         // jar not built, so just skip test
-        cancel("TestModule jar is not available; to enable this test, run 'sbt package' and test again.")
+        cancel("MultiModule jar is not available; to enable this test, run 'sbt package' and test again.")
       }
     }
 
     "load modules indirectly via META-INF/r34modules" in {
 
-      targetJarFor("testModule") map { file =>
+      targetJarFor("multiModule") map { file =>
 
         val loaderSel = system.actorSelection(s"/user/loader")
         val lookedUpLoaderRef = Await.result(loaderSel.resolveOne(4.seconds), 5.seconds)
@@ -127,7 +127,7 @@ class LoaderModuleSpec extends R34TestKitSpec with BeforeAndAfterEach {
 
       } getOrElse {
         // jar not built, so just skip test
-        cancel("TestModule jar is not available; to enable this test, run 'sbt package' and test again.")
+        cancel("MultiModule jar is not available; to enable this test, run 'sbt package' and test again.")
       }
     }
 
@@ -149,7 +149,7 @@ class LoaderModuleSpec extends R34TestKitSpec with BeforeAndAfterEach {
         loadOneRes.result shouldBe a[Bad[_, _]]
       } getOrElse {
         // jar not built, so just skip test
-        cancel("TestModule jar is not available; to enable this test, run 'sbt package' and test again.")
+        cancel("InvalidModule jar is not available; to enable this test, run 'sbt package' and test again.")
       }
     }
 
@@ -177,7 +177,7 @@ class LoaderModuleSpec extends R34TestKitSpec with BeforeAndAfterEach {
         case _ => fail("Unable to get version base from version string: " + thisVersion)
       }
 
-      Paths.get(proj, "target", s"scala-$scalaBase")
+      Paths.get("testModules", proj, "target", s"scala-$scalaBase")
         .toFile
         .listFiles()
         .find(_.getName.endsWith(".jar"))
