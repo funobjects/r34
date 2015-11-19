@@ -45,7 +45,7 @@ class LocalAdmin(implicit val sys: ActorSystem, exec: ExecutionContext, flows: A
         complete {
           HttpResponse(StatusCodes.OK,
             entity = HttpEntity.Chunked(ContentTypes.`text/plain(UTF-8)`,
-              Source(0.seconds, 15.seconds, 0)
+              Source.tick(0.seconds, 15.seconds, 0)
                 .mapMaterializedValue(c => ())
                 .via(Flow[Int].map(tick => HttpEntity.ChunkStreamPart(s"${new java.util.Date}\n")))
             )

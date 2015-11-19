@@ -16,7 +16,7 @@ fork := true
 lazy val commonDependencies = {
   object v {
     val akka        = "2.4.0"
-    val akkaHttp    = "1.0"
+    val akkaHttp    = "2.0-M1"
     val orientDb    = "2.1.3"
     val nimbus      = "3.9.2"
     val scalatest   = "2.2.4"

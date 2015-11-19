@@ -40,7 +40,7 @@ class DebugResources(implicit sys: ActorSystem, exec: ExecutionContext, flows: A
       complete {
         HttpResponse(StatusCodes.OK,
           entity = HttpEntity.Chunked(ContentTypes.`text/plain(UTF-8)`,
-            Source(0.seconds, 15.seconds, 0).via(Flow[Int].map(tick => HttpEntity.ChunkStreamPart(s"${new java.util.Date}\n")))
+            Source.tick(0.seconds, 15.seconds, 0).via(Flow[Int].map(tick => HttpEntity.ChunkStreamPart(s"${new java.util.Date}\n")))
           )
         )
       }
