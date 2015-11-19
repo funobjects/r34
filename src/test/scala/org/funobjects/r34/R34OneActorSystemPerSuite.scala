@@ -28,9 +28,9 @@ import scala.concurrent.duration._
 /**
  * Base mix-in for tests working with actors.
  */
-class R34ActorSpec extends WordSpecLike with BeforeAndAfterAll with Matchers
+class R34OneActorSystemPerSuite extends WordSpecLike with BeforeAndAfterAll with Matchers
 {
-  implicit val system = ActorSystem("ActorSpec", R34ActorSpec.akkaConfig)
+  implicit val system = ActorSystem("ActorSpec", R34OneActorSystemPerSuite.akkaConfig)
   implicit val exec = system.dispatcher
   implicit val mat = ActorMaterializer()
 
@@ -46,7 +46,7 @@ class R34ActorSpec extends WordSpecLike with BeforeAndAfterAll with Matchers
   }
 }
 
-object R34ActorSpec {
+object R34OneActorSystemPerSuite {
   val akkaConfig: Config = ConfigFactory.parseString(
     """
       akka.loglevel = WARNING

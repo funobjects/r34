@@ -2,6 +2,8 @@ name := "r34"
 
 version := "0.9.0-SNAPSHOT"
 
+publishArtifact in Test := true
+
 lazy val commonSettings = Seq(
   organization := "org.funobjects",
   scalaVersion := "2.11.7",

@@ -18,17 +18,16 @@ package org.funobjects.r34.modules
 
 import java.io.File
 import java.net.URL
-import java.nio.file.{Path, FileSystems, Files, Paths}
+import java.nio.file.Paths
 
 import akka.actor.{PoisonPill, Terminated, ActorRef}
-import org.funobjects.r34.{Issue, ResourceModule, R34TestKitSpec}
-import org.scalactic.{Bad, Every, Good}
+import org.funobjects.r34.R34TestKitSpec
+import org.scalactic.{Bad, Good}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.OptionValues._
 
 import scala.concurrent.Await
 
-//import scala.collection.JavaConversions._
 import scala.concurrent.duration._
 
 /**
